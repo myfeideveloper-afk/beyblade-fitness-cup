@@ -1,0 +1,821 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bey Showdown 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap">
+<style>
+/*
+  Layout concept: a pinned top-down arena. Scrolling zooms the camera from the outer
+  crowd ring to the dish, the judge counts down, both blades launch, then the stage
+  dissolves into the invitation and the registration form.
+  Techniques (epic-design): pinned scrub timeline, perspective-style zoom, depth layers
+  (crowd 0-1, arena 2, blades 3, text 4, sparks 5), theatrical text enter/exit, fade-out wipe.
+  Single committed dark look (arena at night), so no light theme block.
+*/
+:root {
+  --ink: #070a12;        /* arena floor */
+  --panel: #0f1626;      /* cards */
+  --line: #25304a;       /* hairlines */
+  --text: #e9eefb;
+  --muted: #93a0bd;
+  --cyan: #2be3ff;       /* blader A / accents */
+  --ember: #ff5a36;      /* blader B / launch */
+  --gold: #ffc83d;       /* judge / key info */
+  --f-display: "Bungee", "Impact", sans-serif;
+  --f-body: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-cond: "Barlow Condensed", "Arial Narrow", sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--ink);
+  color: var(--text);
+  font: 400 17px/1.55 var(--f-body);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--cyan); }
+:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+
+/* ---------- Pinned intro ---------- */
+.track { position: relative; height: 700vh; }
+.stage {
+  position: sticky; top: 0;
+  height: 100vh; height: 100svh;
+  overflow: hidden;
+  background: var(--ink);
+}
+#arena { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.vignette {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 45%, rgba(7,10,18,.85) 100%);
+}
+.grain {
+  position: absolute; inset: 0; pointer-events: none; opacity: .09; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+.flash { position: absolute; inset: 0; pointer-events: none; background: #fff; opacity: 0; }
+.fadeout { position: absolute; inset: 0; pointer-events: none; background: var(--ink); opacity: 0; }
+
+.title {
+  position: absolute; left: 0; right: 0; top: clamp(24px, 8vh, 80px);
+  padding-inline: 16px; text-align: center; pointer-events: none;
+  will-change: transform, opacity;
+}
+.eyebrow {
+  font: 700 clamp(13px, 2.4vw, 16px)/1 var(--f-cond);
+  letter-spacing: .32em; text-transform: uppercase; color: var(--gold);
+}
+.title h1 {
+  margin: 14px 0 0;
+  font: 400 clamp(40px, 11vw, 120px)/.92 var(--f-display);
+  text-transform: uppercase; letter-spacing: .01em;
+  text-wrap: balance;
+  text-shadow: 0 6px 40px rgba(0,0,0,.7);
+}
+.title h1 span { color: var(--cyan); }
+
+.hint {
+  position: absolute; left: 0; right: 0; bottom: max(20px, env(safe-area-inset-bottom, 0px));
+  text-align: center; font: 600 13px/1 var(--f-cond); letter-spacing: .3em; text-transform: uppercase;
+  color: var(--muted); pointer-events: none;
+}
+.hint i { display: block; width: 1px; height: 36px; margin: 10px auto 0; background: linear-gradient(var(--gold), transparent); animation: drip 1.6s ease-in-out infinite; transform-origin: top; }
+@keyframes drip { 0% { transform: scaleY(0); } 60% { transform: scaleY(1); } 100% { transform: scaleY(1); opacity: 0; } }
+
+.skip {
+  position: absolute; top: max(14px, env(safe-area-inset-top, 0px)); right: 16px;
+  font: 600 13px/1 var(--f-cond); letter-spacing: .2em; text-transform: uppercase;
+  color: var(--muted); text-decoration: none; padding: 10px 12px; border: 1px solid var(--line); border-radius: 999px;
+  background: rgba(7,10,18,.6); z-index: 3;
+}
+.skip:hover { color: var(--text); border-color: var(--muted); }
+
+.meter { position: absolute; left: 16px; top: 50%; width: 3px; height: min(30vh, 220px); transform: translateY(-50%); background: var(--line); border-radius: 3px; overflow: hidden; }
+.meter b { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: linear-gradient(var(--cyan), var(--ember)); transform-origin: top; transform: scaleY(0); }
+
+/* Judge countdown */
+.call { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; text-align: center; padding-inline: 16px; }
+.call > div { display: none; }
+.call .judge {
+  position: absolute; top: clamp(24px, 9vh, 90px); left: 0; right: 0;
+  font: 700 clamp(14px, 2.6vw, 20px)/1.2 var(--f-cond); letter-spacing: .3em; text-transform: uppercase; color: var(--gold);
+}
+.num {
+  font: 400 clamp(140px, 34vw, 380px)/.9 var(--f-display);
+  color: var(--text);
+  text-shadow: 0 0 40px rgba(43,227,255,.55), 0 10px 0 rgba(0,0,0,.35);
+  animation: slam .55s cubic-bezier(.2,1.3,.4,1) both;
+}
+.num.n2 { text-shadow: 0 0 40px rgba(255,200,61,.55), 0 10px 0 rgba(0,0,0,.35); }
+.num.n1 { text-shadow: 0 0 50px rgba(255,90,54,.7), 0 10px 0 rgba(0,0,0,.35); }
+.go {
+  font: 400 clamp(54px, 15vw, 190px)/.95 var(--f-display);
+  text-transform: uppercase; text-wrap: balance;
+  background: linear-gradient(180deg, #fff 0%, var(--gold) 45%, var(--ember) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 0 28px rgba(255,90,54,.7));
+  animation: slam .5s cubic-bezier(.2,1.5,.4,1) both;
+}
+@keyframes slam { from { transform: scale(2.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* ---------- Invitation ---------- */
+.invite { padding-inline: 16px; padding-block: clamp(56px, 12vh, 140px) clamp(40px, 8vh, 90px); }
+.wrap { max-width: 760px; margin-inline: auto; }
+.invite .eyebrow { text-align: left; }
+.invite h2 {
+  margin: 14px 0 12px;
+  font: 400 clamp(38px, 9vw, 84px)/.95 var(--f-display); text-transform: uppercase; text-wrap: balance;
+}
+.invite h2 span { color: var(--ember); }
+.lede { color: var(--muted); font-size: clamp(17px, 2.4vw, 20px); max-width: 52ch; margin: 0; }
+
+.ticket {
+  margin-top: 40px; display: grid; grid-template-columns: 1.15fr 1fr; gap: 0;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 6px; position: relative;
+}
+.ticket::before, .ticket::after {
+  content: ""; position: absolute; left: calc(53.5% - 11px); width: 22px; height: 22px; border-radius: 50%; background: var(--ink); border: 1px solid var(--line);
+}
+.ticket::before { top: -12px; clip-path: inset(50% 0 0 0); }
+.ticket::after { bottom: -12px; clip-path: inset(0 0 50% 0); }
+.t-date { padding: 28px; border-right: 2px dashed var(--line); display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.t-date .k, .k { font: 700 13px/1 var(--f-cond); letter-spacing: .28em; text-transform: uppercase; color: var(--muted); }
+.big { font: 400 clamp(54px, 10vw, 92px)/.9 var(--f-display); color: var(--gold); text-transform: uppercase; }
+.big small { display: block; font-size: .42em; color: var(--text); margin-top: 6px; }
+.t-time { font: 700 clamp(22px, 4vw, 30px)/1.1 var(--f-cond); letter-spacing: .06em; text-transform: uppercase; margin-top: 10px; }
+.t-time em { font-style: normal; color: var(--cyan); }
+.t-rest { padding: 28px; display: flex; flex-direction: column; gap: 22px; justify-content: center; min-width: 0; }
+.t-rest p { margin: 6px 0 0; }
+.t-rest strong { color: var(--text); font-weight: 600; }
+.price { color: var(--ember); font-weight: 600; }
+
+.rules { margin: 28px 0 0; padding: 0; list-style: none; display: grid; gap: 10px; color: var(--muted); }
+.rules li { display: flex; gap: 12px; }
+.rules li::before { content: ""; flex: none; width: 10px; height: 10px; margin-top: .55em; border: 2px solid var(--cyan); border-radius: 50%; }
+
+/* ---------- Register ---------- */
+.register { padding-inline: 16px; padding-block: 24px clamp(64px, 12vh, 120px); }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: clamp(22px, 5vw, 40px); }
+.card h3 { margin: 10px 0 6px; font: 400 clamp(28px, 6vw, 44px)/1 var(--f-display); text-transform: uppercase; }
+.card > p { margin: 0 0 26px; color: var(--muted); }
+form { display: grid; gap: 22px; }
+.field { display: grid; gap: 8px; min-width: 0; }
+label, legend { font: 700 14px/1 var(--f-cond); letter-spacing: .2em; text-transform: uppercase; color: var(--text); padding: 0; }
+.opt { color: var(--muted); font-weight: 600; letter-spacing: .12em; }
+input[type="text"], input[type="tel"] {
+  width: 100%; min-width: 0; font: 500 18px/1.2 var(--f-body); color: var(--text);
+  background: var(--ink); border: 1px solid var(--line); border-radius: 4px; padding: 15px 14px;
+}
+input::placeholder { color: #55617f; }
+input:focus-visible { outline: none; border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(43,227,255,.25); }
+.help { margin: 0; font-size: 14px; color: var(--muted); }
+.err { margin: 0; font-size: 14px; color: #ff8a70; min-height: 0; }
+.invalid input, .invalid .seg { border-color: #ff8a70; }
+fieldset { border: 0; margin: 0; padding: 0; min-width: 0; display: grid; gap: 8px; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; background: var(--ink); }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg label {
+  display: grid; gap: 4px; place-items: center; text-align: center; padding: 16px 10px; cursor: pointer;
+  font: 700 18px/1 var(--f-cond); letter-spacing: .14em; color: var(--muted); transition: background .2s, color .2s;
+}
+.seg label small { font: 500 13px/1.2 var(--f-body); letter-spacing: 0; text-transform: none; }
+.seg label + input + label, .seg input + label + input + label { border-left: 1px solid var(--line); }
+.seg input:checked + label[for="dinYes"] { background: var(--cyan); color: #04141a; }
+.seg input:checked + label[for="dinNo"] { background: var(--gold); color: #1e1500; }
+.seg input:focus-visible + label { outline: 3px solid var(--gold); outline-offset: -3px; }
+.go-btn {
+  font: 400 20px/1 var(--f-display); text-transform: uppercase; letter-spacing: .03em;
+  color: #1a0700; background: linear-gradient(180deg, var(--gold), var(--ember)); border: 0; border-radius: 4px;
+  padding: 20px 24px; cursor: pointer; transition: transform .15s, filter .15s;
+}
+.go-btn:hover { transform: translateY(-2px); filter: brightness(1.08); }
+.go-btn:active { transform: translateY(1px); }
+.go-btn:disabled { filter: grayscale(.6); cursor: wait; }
+
+.done { display: none; }
+.done.show { display: grid; gap: 18px; }
+.stub { border: 2px dashed var(--line); border-radius: 4px; padding: 20px; display: grid; gap: 4px; background: var(--ink); }
+.stub .nick { font: 400 clamp(30px, 7vw, 48px)/1 var(--f-display); color: var(--cyan); text-transform: uppercase; overflow-wrap: anywhere; }
+.stub pre { margin: 10px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; font: 500 15px/1.5 var(--f-body); color: var(--muted); }
+.ghost { font: 700 15px/1 var(--f-cond); letter-spacing: .2em; text-transform: uppercase; color: var(--text); background: transparent; border: 1px solid var(--muted); border-radius: 4px; padding: 14px 18px; cursor: pointer; justify-self: start; }
+.ghost:hover { border-color: var(--cyan); color: var(--cyan); }
+
+footer { padding: 28px 16px 48px; text-align: center; color: var(--muted); font: 600 13px/1.4 var(--f-cond); letter-spacing: .24em; text-transform: uppercase; border-top: 1px solid var(--line); }
+
+@media (max-width: 640px) {
+  .ticket { grid-template-columns: 1fr; }
+  .t-date { border-right: 0; border-bottom: 2px dashed var(--line); }
+  .ticket::before, .ticket::after { left: auto; top: calc(50% - 11px); width: 22px; height: 22px; clip-path: none; }
+  .ticket::before { left: -12px; clip-path: inset(0 0 0 50%); bottom: auto; }
+  .ticket::after { right: -12px; left: auto; clip-path: inset(0 50% 0 0); }
+  .meter { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- ======== 1. PINNED ARENA INTRO (scroll-scrubbed) ======== -->
+<div class="track" id="track">
+  <div class="stage">
+    <canvas id="arena" role="img" aria-label="3D view of a beyblade tournament. A crowd circles a table with a stadium dish, two players and a judge get ready, the judge counts down, and both beyblades launch."></canvas>
+    <div class="vignette" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+
+    <div class="title" id="title">
+      <div class="eyebrow">Friends only &middot; 8 Nov 2026</div>
+      <h1>Bey<br><span>Showdown</span></h1>
+    </div>
+
+    <div class="call" id="call" aria-live="polite">
+      <div class="judge" id="judgeTag">Judge on the mic</div>
+      <div id="callBox"></div>
+    </div>
+
+    <div class="flash" id="flash" aria-hidden="true"></div>
+    <div class="fadeout" id="fadeout" aria-hidden="true"></div>
+    <div class="meter" aria-hidden="true"><b id="meterFill"></b></div>
+    <a class="skip" href="#invite">Skip intro</a>
+    <div class="hint" id="hint" aria-hidden="true">Scroll to enter<i></i></div>
+  </div>
+</div>
+
+<!-- ======== 2. INVITATION ======== -->
+<section class="invite" id="invite" aria-labelledby="invTitle">
+  <div class="wrap">
+    <div class="eyebrow">You're invited</div>
+    <h2 id="invTitle">Step up to<br>the <span>dish</span></h2>
+    <p class="lede">A friends-only beyblade tournament. Bring your launcher, pick your blader name and get ready for the countdown.</p>
+
+    <div class="ticket">
+      <div class="t-date">
+        <span class="k">Date</span>
+        <div class="big">8 Nov<small>Sunday 2026</small></div>
+        <div class="t-time">5 PM <em>to</em> 8 PM</div>
+      </div>
+      <div class="t-rest">
+        <div>
+          <span class="k">On the house</span>
+          <p><strong>Snacks and drinks</strong> are prepared for everyone.</p>
+        </div>
+        <div>
+          <span class="k">Dinner (optional)</span>
+          <p>Bring your own, or add <span class="price">RM10</span> and the organiser sorts it out for you.</p>
+        </div>
+      </div>
+    </div>
+
+    <ul class="rules">
+      <li>Invited friends only. Please don't forward this page.</li>
+      <li>Your nickname becomes your blader name on the bracket.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ======== 3. REGISTER ======== -->
+<section class="register" id="register" aria-labelledby="regTitle">
+  <div class="wrap">
+    <div class="card">
+      <div class="eyebrow">Registration</div>
+      <h3 id="regTitle">Register your blader</h3>
+      <p>Takes a minute. Answer every field so we can lock in your spot.</p>
+
+      <form id="regForm" novalidate>
+        <div class="field" data-f="name">
+          <label for="name">Name</label>
+          <input id="name" name="name" type="text" autocomplete="name" placeholder="Your full name" maxlength="80">
+          <p class="err" id="err-name" role="alert"></p>
+        </div>
+
+        <div class="field" data-f="nick">
+          <label for="nick">Nickname</label>
+          <input id="nick" name="nick" type="text" autocomplete="nickname" placeholder="e.g. Storm Pegasus" maxlength="24">
+          <p class="help">This is your blader name on the leaderboard.</p>
+          <p class="err" id="err-nick" role="alert"></p>
+        </div>
+
+        <div class="field" data-f="phone">
+          <label for="phone">Contact number</label>
+          <input id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="012-345 6789" maxlength="20">
+          <p class="err" id="err-phone" role="alert"></p>
+        </div>
+
+        <fieldset data-f="dinner">
+          <legend>Dinner by organiser</legend>
+          <div class="seg">
+            <input type="radio" name="dinner" id="dinYes" value="Yes">
+            <label for="dinYes">YES<small>RM10, organiser arranges</small></label>
+            <input type="radio" name="dinner" id="dinNo" value="No">
+            <label for="dinNo">NO<small>I'll bring my own</small></label>
+          </div>
+          <p class="err" id="err-dinner" role="alert"></p>
+        </fieldset>
+
+        <button class="go-btn" id="submitBtn" type="submit">Lock me in</button>
+      </form>
+
+      <div class="done" id="done" aria-live="polite">
+        <div class="eyebrow" id="doneEyebrow">Blader locked in</div>
+        <div class="stub">
+          <span class="k">Blader name</span>
+          <span class="nick" id="doneNick"></span>
+          <pre id="doneText"></pre>
+        </div>
+        <p class="help" id="doneNote"></p>
+        <button class="ghost" id="copyBtn" type="button">Copy my details</button>
+        <button class="ghost" id="againBtn" type="button">Register another blader</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>See you at the dish &middot; 8 Nov 2026 &middot; 5 to 8 PM</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  /* ------------------------------------------------------------------
+     SET THIS before going live on GitHub Pages.
+     Paste the URL of a form backend (Google Apps Script web app, Formspree,
+     Make/Zapier webhook...). The form POSTs JSON to it.
+     Left empty, the page shows the player a "copy and send to organiser" ticket.
+     ------------------------------------------------------------------ */
+  var FORM_ENDPOINT = "";
+
+  var $ = function (id) { return document.getElementById(id); };
+  var clamp = function (v, a, b) { return Math.max(a, Math.min(b, v)); };
+  var lerp = function (a, b, t) { return a + (b - a) * t; };
+  var ease = function (t) { return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; };
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var coarse = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+
+  /* ================= SCROLL-SCRUBBED 3D ARENA (three.js) ================= */
+  var track = $("track"), cv = $("arena");
+  var titleEl = $("title"), hint = $("hint"), flash = $("flash"), fadeout = $("fadeout");
+  var callBox = $("callBox"), judgeTag = $("judgeTag"), meter = $("meterFill");
+  var W = 0, H = 0, dpr = 1, lastT = 0, ps = 0, lastCall = "";
+
+  // Timeline (0..1 of the pinned scroll)
+  var T = { zoomEnd: .52, c3: .56, c2: .65, c1: .74, go: .83, launch: .835, fadeStart: .95 };
+
+  // Scene scale: metres. Table top at 0.9, stadium dish radius 0.32 (enlarged so it reads on camera).
+  var TABLE_Y = .9, DR = .32;
+  function surf(r) { return .012 + .06 * Math.pow(Math.min(r, DR) / DR, 2.4); }
+  function rnd(i) { var x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
+
+  var renderer = null, stage3 = null;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: !coarse, powerPreference: "high-performance" });
+    stage3 = build3D();
+  } catch (err) { renderer = null; stage3 = null; cv.style.background = "radial-gradient(ellipse at center, #1b2540, #04060b 70%)"; }
+
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, coarse ? 1.5 : 2);
+    W = cv.clientWidth; H = cv.clientHeight;
+    if (renderer) {
+      renderer.setPixelRatio(dpr); renderer.setSize(W, H, false);
+      stage3.camera.aspect = W / H;
+      stage3.camera.fov = 40 + Math.max(0, 1 - W / H) * 24;
+      stage3.camera.updateProjectionMatrix();
+    }
+  }
+  window.addEventListener("resize", resize);
+  if (renderer) resize();
+
+  function build3D() {
+    var V3 = THREE.Vector3;
+    var scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x04060b);
+    scene.fog = new THREE.FogExp2(0x04060b, .04);
+    var camera = new THREE.PerspectiveCamera(40, 1, .05, 90);
+
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.1;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    /* --- reflections: a small studio-style environment so the metal has something to mirror --- */
+    var envScene = new THREE.Scene();
+    envScene.add(new THREE.Mesh(new THREE.SphereGeometry(12, 32, 16), new THREE.MeshBasicMaterial({ color: 0x0b0f1a, side: THREE.BackSide })));
+    function panel(w, h, x, y, z, r, g, b) {
+      var m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: new THREE.Color(r, g, b), side: THREE.DoubleSide }));
+      m.position.set(x, y, z); m.lookAt(0, 0, 0); envScene.add(m);
+    }
+    panel(7, 7, 0, 9, 0, 9, 9, 9);
+    panel(2.5, 5, 8, 3, 3, 9, 4, 2);
+    panel(2.5, 5, -8, 3, 3, 1.5, 4.5, 9);
+    panel(2.5, 4, 0, 3, -9, 4, 4, 5);
+    var envMap = new THREE.PMREMGenerator(renderer).fromScene(envScene, .03).texture;
+
+    /* --- lights --- */
+    scene.add(new THREE.HemisphereLight(0x223355, 0x050506, .45));
+    var spot = new THREE.SpotLight(0xfff1dc, 3.1, 0, .4, .75);
+    spot.position.set(0, 4.4, .5); spot.target.position.set(0, TABLE_Y, 0);
+    spot.castShadow = true; spot.shadow.mapSize.set(coarse ? 1024 : 2048, coarse ? 1024 : 2048);
+    spot.shadow.bias = -.0004; spot.shadow.radius = 4; spot.shadow.camera.near = 1; spot.shadow.camera.far = 8;
+    scene.add(spot, spot.target);
+    var rimA = new THREE.PointLight(0x38c8ff, 1.2, 6); rimA.position.set(-2.3, 1.7, .4); scene.add(rimA);
+    var rimB = new THREE.PointLight(0xff6a3d, 1.2, 6); rimB.position.set(2.3, 1.7, .4); scene.add(rimB);
+    var crowdLight = new THREE.PointLight(0xffd9a8, .9, 16); crowdLight.position.set(0, 6.5, 0); scene.add(crowdLight);
+    var flashLight = new THREE.PointLight(0xffa860, 0, 2.5); scene.add(flashLight);
+
+    /* --- floor, boundary tape --- */
+    var nc = document.createElement("canvas"); nc.width = nc.height = 256;
+    var nx = nc.getContext("2d"); nx.fillStyle = "#777"; nx.fillRect(0, 0, 256, 256);
+    for (var i = 0; i < 9000; i++) { var v = 90 + rnd(i) * 90; nx.fillStyle = "rgb(" + v + "," + v + "," + v + ")"; nx.fillRect(rnd(i + .5) * 256, rnd(i + 1.5) * 256, 1.6, 1.6); }
+    var floorTex = new THREE.CanvasTexture(nc); floorTex.wrapS = floorTex.wrapT = THREE.RepeatWrapping; floorTex.repeat.set(40, 40);
+    floorTex.encoding = THREE.sRGBEncoding; floorTex.anisotropy = 4;
+    var floor = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.MeshStandardMaterial({ color: 0x24262d, map: floorTex, roughness: .78, metalness: .05, envMap: envMap, envMapIntensity: .25 }));
+    floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+    var tape = new THREE.Mesh(new THREE.RingGeometry(2.42, 2.47, 96), new THREE.MeshStandardMaterial({ color: 0xd8d8cf, roughness: .6 }));
+    tape.rotation.x = -Math.PI / 2; tape.position.y = .002; scene.add(tape);
+
+    /* --- table --- */
+    var leather = new THREE.MeshStandardMaterial({ color: 0x15181f, roughness: .55, metalness: .1, envMap: envMap, envMapIntensity: .5 });
+    var steel = new THREE.MeshStandardMaterial({ color: 0xb9c0cc, roughness: .28, metalness: 1, envMap: envMap, envMapIntensity: 1.2 });
+    var top = new THREE.Mesh(new THREE.CylinderGeometry(.75, .75, .06, 72), leather); top.position.y = TABLE_Y - .03; top.castShadow = top.receiveShadow = true; scene.add(top);
+    var edge = new THREE.Mesh(new THREE.TorusGeometry(.75, .014, 12, 96), steel); edge.rotation.x = Math.PI / 2; edge.position.y = TABLE_Y - .03; scene.add(edge);
+    var stem = new THREE.Mesh(new THREE.CylinderGeometry(.09, .12, TABLE_Y - .06, 24), steel); stem.position.y = (TABLE_Y - .06) / 2; stem.castShadow = true; scene.add(stem);
+    var foot = new THREE.Mesh(new THREE.CylinderGeometry(.42, .46, .04, 48), steel); foot.position.y = .02; foot.castShadow = foot.receiveShadow = true; scene.add(foot);
+
+    /* --- stadium dish: lathe profile that matches surf() so blades ride the surface --- */
+    var prof = [];
+    for (var s = 0; s <= 28; s++) { var rr = s / 28 * DR; prof.push(new THREE.Vector2(Math.max(rr, .0005), surf(rr))); }
+    prof.push(new THREE.Vector2(DR + .012, .078), new THREE.Vector2(DR + .045, .084), new THREE.Vector2(DR + .075, .072), new THREE.Vector2(DR + .08, .0), new THREE.Vector2(.0005, .0));
+    var dishMat = new THREE.MeshPhysicalMaterial({ color: 0x1d2b40, metalness: .25, roughness: .2, clearcoat: 1, clearcoatRoughness: .08, envMap: envMap, envMapIntensity: 1.5, side: THREE.DoubleSide });
+    var dish = new THREE.Mesh(new THREE.LatheGeometry(prof, 96), dishMat);
+    dish.position.y = TABLE_Y; dish.castShadow = dish.receiveShadow = true; scene.add(dish);
+    [.09, .19, .28].forEach(function (r) {
+      var t = new THREE.Mesh(new THREE.TorusGeometry(r, .0025, 8, 96), steel); t.rotation.x = Math.PI / 2; t.position.y = TABLE_Y + surf(r) + .001; scene.add(t);
+    });
+    var rimGlow = new THREE.Mesh(new THREE.TorusGeometry(DR + .06, .004, 8, 128), new THREE.MeshBasicMaterial({ color: 0x38c8ff }));
+    rimGlow.rotation.x = Math.PI / 2; rimGlow.position.y = TABLE_Y + .082; scene.add(rimGlow);
+
+    /* --- beyblades --- */
+    function makeBlade(col) {
+      var g = new THREE.Group(), spin = new THREE.Group(); g.add(spin);
+      var chrome = new THREE.MeshStandardMaterial({ color: 0xd7dde8, metalness: 1, roughness: .16, envMap: envMap, envMapIntensity: 1.8 });
+      var tint = new THREE.MeshStandardMaterial({ color: col, metalness: .5, roughness: .3, envMap: envMap, envMapIntensity: 1.2, emissive: col, emissiveIntensity: .22 });
+      var dark = new THREE.MeshStandardMaterial({ color: 0x14171d, metalness: .8, roughness: .35, envMap: envMap });
+      var shp = new THREE.Shape();
+      for (var i = 0; i <= 120; i++) {
+        var th = i / 120 * Math.PI * 2, rad = .034 + .015 * Math.pow(Math.abs(Math.cos(3 * th)), 1.6);
+        if (i) shp.lineTo(Math.cos(th) * rad, Math.sin(th) * rad); else shp.moveTo(Math.cos(th) * rad, Math.sin(th) * rad);
+      }
+      var lobe = new THREE.ExtrudeGeometry(shp, { depth: .008, bevelEnabled: true, bevelThickness: .003, bevelSize: .0025, bevelSegments: 2, curveSegments: 1 });
+      lobe.rotateX(-Math.PI / 2);
+      var m1 = new THREE.Mesh(lobe, chrome); m1.position.y = .012;
+      var m2 = new THREE.Mesh(new THREE.CylinderGeometry(.03, .034, .014, 40), tint); m2.position.y = .007;
+      var m3 = new THREE.Mesh(new THREE.CylinderGeometry(.021, .024, .012, 32), dark); m3.position.y = .026;
+      var m4 = new THREE.Mesh(new THREE.SphereGeometry(.014, 24, 10, 0, Math.PI * 2, 0, Math.PI / 2), chrome); m4.position.y = .032;
+      var tip = new THREE.Mesh(new THREE.ConeGeometry(.011, .02, 20), chrome); tip.rotation.x = Math.PI; tip.position.y = -.008;
+      var blur = new THREE.Mesh(new THREE.CircleGeometry(.052, 40), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
+      blur.rotation.x = -Math.PI / 2; blur.position.y = .02;
+      [m1, m2, m3, m4, tip].forEach(function (m) { m.castShadow = true; spin.add(m); });
+      g.add(blur); g.userData = { spin: spin, blur: blur };
+      scene.add(g); return g;
+    }
+    var blades = [makeBlade(0x2fc4ff), makeBlade(0xff5f33)];
+
+    /* --- people --- */
+    function mat(c, r) { return new THREE.MeshStandardMaterial({ color: c, roughness: r || .85, metalness: 0 }); }
+    function limb(a, b, r, m) {
+      var d = new V3().subVectors(b, a), len = d.length();
+      var mesh = new THREE.Mesh(new THREE.CylinderGeometry(r, r * .85, len, 10), m);
+      mesh.position.copy(a).addScaledVector(d, .5);
+      mesh.quaternion.setFromUnitVectors(new V3(0, 1, 0), d.normalize());
+      mesh.castShadow = true; return mesh;
+    }
+    function human(o) {
+      var g = new THREE.Group(), skin = mat(o.skin, .6), shirt = mat(o.shirt), pants = mat(o.pants, .9), hair = mat(o.hair, .7);
+      var legs = new THREE.Mesh(new THREE.CylinderGeometry(.15, .12, .88, 14), pants); legs.scale.set(1.45, 1, .85); legs.position.y = .44; legs.castShadow = true; g.add(legs);
+      var up = new THREE.Group(); up.position.y = .88; g.add(up);
+      var torso = new THREE.Mesh(new THREE.CylinderGeometry(.19, .165, .62, 16), shirt); torso.scale.set(1.4, 1, .78); torso.position.y = .31; torso.castShadow = true; up.add(torso);
+      var neck = new THREE.Mesh(new THREE.CylinderGeometry(.05, .055, .1, 10), skin); neck.position.y = .66; up.add(neck);
+      var head = new THREE.Mesh(new THREE.SphereGeometry(.11, 20, 16), skin); head.scale.set(1, 1.14, 1.02); head.position.y = .78; head.castShadow = true; up.add(head);
+      var cap = new THREE.Mesh(new THREE.SphereGeometry(.118, 20, 12, 0, Math.PI * 2, 0, Math.PI * .62), hair); cap.scale.set(1, 1.1, 1.05); cap.position.set(0, .795, -.012); cap.rotation.x = -.25; up.add(cap);
+      g.userData = { up: up, skin: skin, shirt: shirt };
+      return g;
+    }
+    function armPair(h, hands, sleeve) {
+      var up = h.userData.up, skin = h.userData.skin;
+      h.updateMatrixWorld(true);
+      var sh = [new V3(.215, .56, 0), new V3(-.215, .56, 0)];
+      var hl = hands.map(function (w) { return up.worldToLocal(w.clone()); });
+      if (sh[0].distanceTo(hl[0]) + sh[1].distanceTo(hl[1]) > sh[0].distanceTo(hl[1]) + sh[1].distanceTo(hl[0])) hl.reverse();
+      for (var i = 0; i < 2; i++) {
+        var mid = sh[i].clone().add(hl[i]).multiplyScalar(.5); mid.y -= .09; mid.x += sh[i].x * .5;
+        up.add(limb(sh[i], mid, .042, sleeve), limb(mid, hl[i], .035, skin));
+        var hd = new THREE.Mesh(new THREE.SphereGeometry(.04, 12, 10), skin); hd.position.copy(hl[i]); up.add(hd);
+      }
+    }
+    function player(side, col, shirtHex, skinHex, hairHex) {
+      var sg = side, h = human({ skin: skinHex, shirt: shirtHex, pants: 0x1a1d27, hair: hairHex });
+      h.position.set(sg * 1.12, 0, 0); h.rotation.y = -sg * Math.PI / 2; h.userData.up.rotation.x = .42;
+      scene.add(h);
+      var grip = new V3(sg * .82, 1.0, .06), front = new V3(sg * .64, .985, -.05);
+      armPair(h, [grip, front], h.userData.shirt);
+      var L = new THREE.Mesh(new THREE.CylinderGeometry(.03, .026, .36, 20), new THREE.MeshStandardMaterial({ color: col, roughness: .35, metalness: .3, envMap: envMap }));
+      L.rotation.z = Math.PI / 2; L.position.set(sg * .66, .995, 0); L.castShadow = true; scene.add(L);
+      var ring = new THREE.Mesh(new THREE.CylinderGeometry(.045, .045, .014, 28), new THREE.MeshStandardMaterial({ color: 0xaab2bf, metalness: 1, roughness: .25, envMap: envMap }));
+      ring.position.set(sg * .47, .995, 0); ring.castShadow = true; scene.add(ring);
+      return h;
+    }
+    player(-1, 0x1fa8e0, 0x1b2f4a, 0xe0b08a, 0x151210);
+    player(1, 0xe0552f, 0x4a1d1b, 0x9a6a47, 0x0e0c0b);
+
+    // judge behind the table, one arm holds a flag
+    var judge = human({ skin: 0xc99872, shirt: 0xe8ebf0, pants: 0x101218, hair: 0x2a2018 });
+    judge.position.set(0, 0, -1.18); judge.userData.up.rotation.x = .1; scene.add(judge);
+    var vest = new THREE.Mesh(new THREE.CylinderGeometry(.196, .17, .5, 16, 1, true), mat(0x0d0f14, .7)); vest.scale.set(1.41, 1, .79); vest.position.y = .3; judge.userData.up.add(vest);
+    var jUp = judge.userData.up;
+    var armDown = limb(new V3(-.215, .56, 0), new V3(-.25, .0, .05), .042, judge.userData.shirt); jUp.add(armDown);
+    var flagArm = new THREE.Group(); flagArm.position.set(.215, .56, 0); jUp.add(flagArm);
+    flagArm.add(limb(new V3(0, 0, 0), new V3(0, -.29, 0), .042, judge.userData.shirt), limb(new V3(0, -.29, 0), new V3(0, -.58, 0), .035, judge.userData.skin));
+    var flagPole = new THREE.Mesh(new THREE.CylinderGeometry(.006, .006, .34, 8), mat(0xcccccc, .4)); flagPole.position.set(0, -.62, 0); flagArm.add(flagPole);
+    var flagCloth = new THREE.Mesh(new THREE.PlaneGeometry(.2, .13), new THREE.MeshStandardMaterial({ color: 0xffc83d, roughness: .7, side: THREE.DoubleSide, emissive: 0x3a2a00 }));
+    flagCloth.position.set(.1, -.74, 0); flagCloth.rotation.y = Math.PI / 2; flagArm.add(flagCloth);
+
+    // crowd: instanced bodies, heads, hair, legs and arms
+    var tones = [0xf0c6a0, 0xd9a47c, 0xa8734d, 0x7a4a2e, 0xe8b996].map(function (c) { return new THREE.Color(c); });
+    var shirts = [0x3b4a78, 0x6a3d5e, 0x2f6a63, 0x7a5a2e, 0x4b3f7a, 0x8a3a3a, 0x2d5b8a, 0x5a6b2f, 0x23262d, 0xb8bcc6, 0x6b4b36].map(function (c) { return new THREE.Color(c); });
+    var pantsC = [0x1a1d27, 0x2b3446, 0x15161a, 0x3a2f27].map(function (c) { return new THREE.Color(c); });
+    var hairC = [0x15110e, 0x2a1d14, 0x0e0c0b, 0x5a4026, 0x8a8a8a].map(function (c) { return new THREE.Color(c); });
+    var persons = [];
+    var step = coarse ? .8 : .62, idx = 0;
+    for (var ring = 0; 2.8 + ring * step < 9; ring++) {
+      var r = 2.8 + ring * step, n = Math.floor(2 * Math.PI * r / .66), dir = ring % 2 ? -1 : 1;
+      for (var q = 0; q < n; q++) {
+        idx++;
+        persons.push({ r: r + (rnd(idx + 3) - .5) * .18, a: q / n * Math.PI * 2 + rnd(idx) * .08, sp: dir * (.02 + ring * .0035), k: .92 + rnd(idx + 2) * .17,
+          ph: rnd(idx + 4) * 6.28, cheer: rnd(idx + 7) < .55 ? 1 : 0 });
+      }
+    }
+    var N = persons.length;
+    function inst(geo, color, count) {
+      var m = new THREE.InstancedMesh(geo, new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: .85 }), count);
+      m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); m.frustumCulled = false; scene.add(m); return m;
+    }
+    var gLegs = new THREE.CylinderGeometry(.15, .12, .88, 10); var gTorso = new THREE.CylinderGeometry(.19, .165, .62, 12);
+    var gHead = new THREE.SphereGeometry(.11, 12, 10); var gHair = new THREE.SphereGeometry(.118, 12, 8, 0, Math.PI * 2, 0, Math.PI * .62);
+    var gArm = new THREE.CylinderGeometry(.045, .038, .62, 8); gArm.translate(0, -.31, 0);
+    var mLegs = inst(gLegs, 0, N), mTorso = inst(gTorso, 0, N), mHead = inst(gHead, 0, N), mHair = inst(gHair, 0, N), mArms = inst(gArm, 0, N * 2);
+    var L = { legs: new THREE.Matrix4().compose(new V3(0, .44, 0), new THREE.Quaternion(), new V3(1.45, 1, .85)),
+      torso: new THREE.Matrix4().compose(new V3(0, 1.19, 0), new THREE.Quaternion(), new V3(1.4, 1, .78)),
+      head: new THREE.Matrix4().compose(new V3(0, 1.66, 0), new THREE.Quaternion(), new V3(1, 1.14, 1.02)),
+      hair: new THREE.Matrix4().compose(new V3(0, 1.685, -.012), new THREE.Quaternion().setFromEuler(new THREE.Euler(-.25, 0, 0)), new V3(1, 1.1, 1.05)) };
+    persons.forEach(function (pp, i) {
+      var shirtC = shirts[Math.floor(rnd(i + 11) * shirts.length)];
+      mLegs.setColorAt(i, pantsC[Math.floor(rnd(i + 12) * pantsC.length)]); mTorso.setColorAt(i, shirtC);
+      var sk = tones[Math.floor(rnd(i + 13) * tones.length)]; mHead.setColorAt(i, sk);
+      mHair.setColorAt(i, hairC[Math.floor(rnd(i + 14) * hairC.length)]);
+      mArms.setColorAt(i * 2, shirtC); mArms.setColorAt(i * 2 + 1, shirtC);
+    });
+    var Pm = new THREE.Matrix4(), Mm = new THREE.Matrix4(), Am = new THREE.Matrix4(), dummy = new THREE.Object3D(), eul = new THREE.Euler(), qq = new THREE.Quaternion(), pv = new V3(), one = new V3(1, 1, 1);
+
+    /* --- atmosphere: light cone and floating dust --- */
+    var cone = new THREE.Mesh(new THREE.ConeGeometry(1.8, 3.5, 40, 1, true), new THREE.MeshBasicMaterial({ color: 0xcfe0ff, transparent: true, opacity: .035, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+    cone.position.set(0, TABLE_Y + 1.75, .25); scene.add(cone);
+    var dn = coarse ? 250 : 600, dpos = new Float32Array(dn * 3);
+    for (var d = 0; d < dn; d++) { var da = rnd(d) * 6.28, dr = Math.sqrt(rnd(d + 1)) * 3.4; dpos[d * 3] = Math.cos(da) * dr; dpos[d * 3 + 1] = rnd(d + 2) * 5; dpos[d * 3 + 2] = Math.sin(da) * dr; }
+    var dg = new THREE.BufferGeometry(); dg.setAttribute("position", new THREE.BufferAttribute(dpos, 3));
+    var gc = document.createElement("canvas"); gc.width = gc.height = 64; var gx = gc.getContext("2d");
+    var gr = gx.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, "rgba(255,255,255,1)"); gr.addColorStop(1, "rgba(255,255,255,0)");
+    gx.fillStyle = gr; gx.fillRect(0, 0, 64, 64); var glowTex = new THREE.CanvasTexture(gc);
+    var dust = new THREE.Points(dg, new THREE.PointsMaterial({ size: .022, map: glowTex, transparent: true, opacity: .45, depthWrite: false, blending: THREE.AdditiveBlending, color: 0xdde8ff }));
+    scene.add(dust);
+
+    /* --- sparks --- */
+    var SN = 200, spPos = new Float32Array(SN * 3), spCol = new Float32Array(SN * 3), spVel = new Float32Array(SN * 3), spLife = new Float32Array(SN), spHead = 0;
+    for (var s2 = 0; s2 < SN; s2++) spPos[s2 * 3 + 1] = -10;
+    var sg2 = new THREE.BufferGeometry(); sg2.setAttribute("position", new THREE.BufferAttribute(spPos, 3)); sg2.setAttribute("color", new THREE.BufferAttribute(spCol, 3));
+    var sparkPts = new THREE.Points(sg2, new THREE.PointsMaterial({ size: .03, map: glowTex, vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+    sparkPts.frustumCulled = false; scene.add(sparkPts);
+    function emit(x, y, z, n) {
+      for (var i = 0; i < n; i++) {
+        var k = spHead++ % SN, a = Math.random() * 6.283, sp = .5 + Math.random() * 1.6;
+        spPos[k * 3] = x; spPos[k * 3 + 1] = y; spPos[k * 3 + 2] = z;
+        spVel[k * 3] = Math.cos(a) * sp; spVel[k * 3 + 1] = .6 + Math.random() * 1.6; spVel[k * 3 + 2] = Math.sin(a) * sp; spLife[k] = 1;
+      }
+    }
+
+    /* --- blade paths (driven by scroll, so scrubbing is deterministic) --- */
+    function orbit(i, t) {
+      var dmp = 1 - Math.min(t / 10, .5);
+      return i ? { x: .19 * dmp * Math.cos(1.3 * t), z: .15 * dmp * Math.sin(1.9 * t + 1) }
+               : { x: -.19 * dmp * Math.cos(1.7 * t), z: .15 * dmp * Math.sin(2.3 * t) };
+    }
+    function bladePos(i, s) {
+      var sx = (i ? 1 : -1) * .47, ly = TABLE_Y + 1.03;
+      if (s <= 0) return { x: sx, y: ly, z: 0 };
+      if (s < .35) {
+        var e = 1 - Math.pow(1 - s / .35, 3), o = orbit(i, 0), r = Math.hypot(o.x, o.z);
+        return { x: sx + (o.x - sx) * e, y: ly + (TABLE_Y + surf(r) + .018 - ly) * e + Math.sin(e * Math.PI) * .05, z: o.z * e };
+      }
+      var q = orbit(i, (s - .35) * 5.2); return { x: q.x, y: TABLE_Y + surf(Math.hypot(q.x, q.z)) + .018, z: q.z };
+    }
+
+    var lastHit = 0, camTarget = new V3(), camPos = new V3();
+    var DOLLY = new V3(0, 1.2, 1.12), BATTLE = new V3(.06, 1.5, .66);
+
+    function render(p, time, dt, now) {
+      /* camera: orbit in from outside the crowd, dolly during the countdown, push in on launch */
+      var z = ease(clamp(p / T.zoomEnd, 0, 1));
+      var R = 12.5 * Math.pow(1.35 / 12.5, z), h = 1.3 + (6 - 1.3) * Math.pow(1 - z, 1.5), az = (1 - z) * 1.0;
+      camPos.set(Math.sin(az) * R, h, Math.cos(az) * R);
+      camPos.lerp(DOLLY, ease(clamp((p - T.zoomEnd) / (T.go - T.zoomEnd), 0, 1)));
+      camPos.lerp(BATTLE, ease(clamp((p - T.go) / .07, 0, 1)));
+      var asp = W / H, wide = asp < 1 ? 1 + (1 - asp) * 1.1 : 1;
+      camTarget.set(0, .9 + .06 * z, 0);
+      camPos.sub(camTarget).multiplyScalar(lerp(1, wide, z)).add(camTarget);
+      if (!reduce) { camPos.x += Math.sin(time * .7) * .004 * z; camPos.y += Math.sin(time * .9) * .003 * z; }
+      var shake = (p > T.launch && p < T.launch + .03 && !reduce) ? (1 - (p - T.launch) / .03) * .012 : 0;
+      camera.position.set(camPos.x + (Math.random() - .5) * shake, camPos.y + (Math.random() - .5) * shake, camPos.z);
+      camera.lookAt(camTarget);
+
+      /* crowd circles the arena and starts cheering during the countdown */
+      var cheerAmt = reduce ? 0 : ease(clamp((p - .5) / .3, 0, 1));
+      for (var i = 0; i < N; i++) {
+        var pp = persons[i], a = pp.a + time * pp.sp;
+        var x = Math.sin(a) * pp.r, zz = Math.cos(a) * pp.r, bob = reduce ? 0 : Math.abs(Math.sin(time * 2.2 + pp.ph)) * .025 * (1 + cheerAmt * 2);
+        dummy.position.set(x, bob, zz); dummy.rotation.set(0, Math.atan2(-x, -zz), 0); dummy.scale.set(pp.k, pp.k, pp.k); dummy.updateMatrix();
+        Pm.copy(dummy.matrix);
+        mLegs.setMatrixAt(i, Mm.multiplyMatrices(Pm, L.legs)); mTorso.setMatrixAt(i, Mm.multiplyMatrices(Pm, L.torso));
+        mHead.setMatrixAt(i, Mm.multiplyMatrices(Pm, L.head)); mHair.setMatrixAt(i, Mm.multiplyMatrices(Pm, L.hair));
+        var lift = .12 + (pp.cheer ? cheerAmt * (1.9 + Math.sin(time * 6 + pp.ph) * .35) : 0);
+        for (var sd = 0; sd < 2; sd++) {
+          var sgn = sd ? -1 : 1;
+          pv.set(sgn * .27, 1.5, 0); eul.set(0, 0, sgn * lift); qq.setFromEuler(eul);
+          Am.compose(pv, qq, one); mArms.setMatrixAt(i * 2 + sd, Mm.multiplyMatrices(Pm, Am));
+        }
+      }
+      mLegs.instanceMatrix.needsUpdate = mTorso.instanceMatrix.needsUpdate = mHead.instanceMatrix.needsUpdate = mHair.instanceMatrix.needsUpdate = mArms.instanceMatrix.needsUpdate = true;
+      if (mLegs.instanceColor) mLegs.instanceColor.needsUpdate = mTorso.instanceColor.needsUpdate = mHead.instanceColor.needsUpdate = mHair.instanceColor.needsUpdate = mArms.instanceColor.needsUpdate = true;
+
+      /* judge raises the flag for the count and drops it on GO */
+      var up = ease(clamp((p - .48) / .06, 0, 1)), drop = ease(clamp((p - T.go) / .025, 0, 1));
+      flagArm.rotation.z = lerp(.12, 2.75, up) - drop * 1.9 + (up > .9 && drop < .1 && !reduce ? Math.sin(time * 6) * .08 : 0);
+      flagCloth.rotation.x = reduce ? 0 : Math.sin(time * 9) * .15 * up;
+
+      /* blades */
+      var s = p > T.launch ? (p - T.launch) / (1 - T.launch) * 4.2 : -1;
+      var A = bladePos(0, s), B = bladePos(1, s);
+      [A, B].forEach(function (ps2, b) {
+        var bl = blades[b]; bl.position.set(ps2.x, ps2.y, ps2.z);
+        var spun = s < 0 ? 0 : (p - T.launch) * 2400 * (b ? -1 : 1);
+        bl.userData.spin.rotation.y = spun;
+        var t2 = s < 0 ? 0 : s;
+        bl.rotation.x = s < 0 ? 0 : .07 * Math.sin(t2 * 7 + b); bl.rotation.z = s < 0 ? 0 : .07 * Math.cos(t2 * 7 + b * 2);
+        bl.userData.blur.material.opacity = s < 0 ? 0 : .16;
+      });
+      if (s > 0) {
+        var d = Math.hypot(A.x - B.x, A.z - B.z);
+        if (d < .085 && now - lastHit > 140 && !reduce) {
+          lastHit = now; emit((A.x + B.x) / 2, (A.y + B.y) / 2 + .02, (A.z + B.z) / 2, coarse ? 14 : 28);
+          flashLight.position.set((A.x + B.x) / 2, (A.y + B.y) / 2 + .1, (A.z + B.z) / 2); flashLight.intensity = 5;
+        }
+      }
+      flashLight.intensity *= .84;
+      for (var k = 0; k < SN; k++) {
+        if (spLife[k] > 0) {
+          spLife[k] -= dt * 1.7; spVel[k * 3 + 1] -= 4.2 * dt;
+          spPos[k * 3] += spVel[k * 3] * dt; spPos[k * 3 + 1] += spVel[k * 3 + 1] * dt; spPos[k * 3 + 2] += spVel[k * 3 + 2] * dt;
+          var lf = Math.max(spLife[k], 0); spCol[k * 3] = lf; spCol[k * 3 + 1] = .55 * lf + .2 * lf * lf; spCol[k * 3 + 2] = .15 * lf;
+          if (spPos[k * 3 + 1] < TABLE_Y + .01) { spPos[k * 3 + 1] = TABLE_Y + .01; spVel[k * 3 + 1] *= -.3; }
+        } else { spCol[k * 3] = spCol[k * 3 + 1] = spCol[k * 3 + 2] = 0; }
+      }
+      sg2.attributes.position.needsUpdate = true; sg2.attributes.color.needsUpdate = true;
+      dust.rotation.y = time * .015; dust.position.y = Math.sin(time * .2) * .05;
+
+      renderer.render(scene, camera);
+    }
+    return { camera: camera, render: render };
+  }
+
+  function draw(now) {
+    var dt = Math.min((now - lastT) / 1000 || 0, .05); lastT = now;
+    var rect = track.getBoundingClientRect();
+    var raw = clamp(-rect.top / (rect.height - window.innerHeight), 0, 1);
+    ps += (raw - ps) * (reduce ? 1 : .14);
+    if (Math.abs(raw - ps) < .0004) ps = raw;
+    var p = ps;
+    var time = reduce ? 0 : now / 1000;
+    var inCount = p > T.c3 - .02 && p < T.go + .02;
+
+    if (stage3) stage3.render(p, time, dt, now);
+
+    /* ---------- HTML overlays driven by the same progress ---------- */
+    var tp = clamp(p / .16, 0, 1);
+    titleEl.style.opacity = 1 - tp;
+    titleEl.style.transform = "translateY(" + (-tp * 60) + "px) scale(" + (1 + tp * .12) + ")";
+    hint.style.opacity = 1 - clamp(p / .05, 0, 1);
+    meter.style.transform = "scaleY(" + p + ")";
+
+    var call = "";
+    if (p >= T.c3 && p < T.c2) call = "3";
+    else if (p >= T.c2 && p < T.c1) call = "2";
+    else if (p >= T.c1 && p < T.go) call = "1";
+    else if (p >= T.go && p < T.fadeStart + .03) call = "go";
+    if (call !== lastCall) {
+      lastCall = call;
+      callBox.innerHTML = "";
+      if (call) {
+        var el = document.createElement("div");
+        if (call === "go") { el.className = "go"; el.textContent = "Go shoooot!"; }
+        else { el.className = "num n" + call; el.textContent = call; }
+        callBox.appendChild(el);
+      }
+      if (call === "go") { flash.style.opacity = .85; setTimeout(function () { flash.style.opacity = 0; }, 90); }
+    }
+    callBox.style.display = call ? "block" : "none";
+    flash.style.transition = "opacity .5s";
+    judgeTag.style.opacity = inCount ? 1 : 0;
+    judgeTag.textContent = call === "go" ? "Judge: bladers, launch!" : "Judge: bladers, ready?";
+    callBox.parentNode.style.opacity = call === "go" ? clamp(1 - (p - (T.fadeStart - .02)) / .06, 0, 1) : 1;
+
+    // fade to ink, handing over to the invitation
+    fadeout.style.opacity = clamp((p - T.fadeStart) / (1 - T.fadeStart), 0, 1);
+
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+
+  /* ================= REGISTRATION FORM ================= */
+  var form = $("regForm"), done = $("done");
+  var lastSummary = "";
+
+  function setErr(field, msg) {
+    var wrap = form.querySelector('[data-f="' + field + '"]');
+    $("err-" + field).textContent = msg || "";
+    if (wrap) wrap.classList.toggle("invalid", !!msg);
+  }
+  function validate() {
+    var ok = true, first = null;
+    var name = $("name").value.trim(), nick = $("nick").value.trim(), phone = $("phone").value.trim();
+    var digits = phone.replace(/\D/g, "");
+    var dinner = form.querySelector('input[name="dinner"]:checked');
+    function bad(f, m, el) { setErr(f, m); ok = false; if (!first) first = el; }
+    setErr("name"); setErr("nick"); setErr("phone"); setErr("dinner");
+    if (name.length < 2) bad("name", "Enter your name.", $("name"));
+    if (nick.length < 2) bad("nick", "Pick a blader nickname (at least 2 characters).", $("nick"));
+    if (!/^[+\d][\d\s\-()]*$/.test(phone) || digits.length < 8 || digits.length > 15) bad("phone", "Enter a valid contact number, for example 012-345 6789.", $("phone"));
+    if (!dinner) bad("dinner", "Choose Yes or No for dinner.", $("dinYes"));
+    if (first) first.focus();
+    return ok ? { name: name, nickname: nick, phone: phone, dinner: dinner.value } : null;
+  }
+  ["name", "nick", "phone"].forEach(function (f) { $(f).addEventListener("input", function () { setErr(f); }); });
+  form.querySelectorAll('input[name="dinner"]').forEach(function (r) { r.addEventListener("change", function () { setErr("dinner"); }); });
+
+  function showDone(d, sent) {
+    lastSummary = "Bey Showdown, 8 Nov 2026, 5-8 PM\nName: " + d.name + "\nNickname: " + d.nickname + "\nContact: " + d.phone + "\nDinner by organiser: " + d.dinner + (d.dinner === "Yes" ? " (RM10)" : "");
+    $("doneNick").textContent = d.nickname;
+    $("doneText").textContent = lastSummary.split("\n").slice(1).join("\n");
+    $("doneEyebrow").textContent = sent ? "Blader locked in" : "One more step";
+    $("doneNote").textContent = sent
+      ? "Your registration was sent to the organiser. See you at the dish."
+      : "Copy your details and send them to the organiser to confirm your spot.";
+    form.style.display = "none"; done.classList.add("show");
+    done.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
+  }
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var d = validate(); if (!d) return;
+    try { localStorage.setItem("bey-showdown-reg", JSON.stringify(d)); } catch (err) { /* storage unavailable */ }
+    if (!FORM_ENDPOINT) { showDone(d, false); return; }
+    var btn = $("submitBtn"); btn.disabled = true; btn.textContent = "Sending...";
+    fetch(FORM_ENDPOINT, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(d) })
+      .then(function () { showDone(d, true); })
+      .catch(function () { showDone(d, false); })
+      .finally(function () { btn.disabled = false; btn.textContent = "Lock me in"; });
+  });
+
+  $("copyBtn").addEventListener("click", function () {
+    var btn = this;
+    function ok() { btn.textContent = "Copied"; setTimeout(function () { btn.textContent = "Copy my details"; }, 1800); }
+    function fallback() {
+      var r = document.createRange(); r.selectNodeContents($("doneText"));
+      var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r); btn.textContent = "Press copy now";
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(lastSummary).then(ok, fallback);
+    else fallback();
+  });
+  $("againBtn").addEventListener("click", function () {
+    form.reset(); ["name", "nick", "phone", "dinner"].forEach(function (f) { setErr(f); });
+    done.classList.remove("show"); form.style.display = "grid"; $("name").focus();
+  });
+})();
+</script>
+<script>document.documentElement.style.scrollBehavior='auto';setTimeout(function(){var t=document.getElementById('track');window.scrollTo(0,(0.6)*(t.offsetHeight-innerHeight));},200);</script></body>
+</html>
