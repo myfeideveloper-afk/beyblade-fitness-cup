@@ -370,6 +370,19 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
      ------------------------------------------------------------------ */
   var FORM_ENDPOINT = "";
 
+  /* Option B: send registrations into a Google Form (answers land in its Responses sheet).
+     1. In the form, make 4 questions: Name (short answer), Nickname (short answer), Contact number (short answer),
+        Dinner by organiser (multiple choice with two options, written exactly as in dinnerLabels below).
+     2. Form menu (three dots) > "Get pre-filled link", type a sample answer in every question, press "Get link".
+        The link looks like .../d/e/FORM_ID/viewform?usp=pp_url&entry.111=a&entry.222=b ...
+     3. Copy FORM_ID into action (below) and each entry.NNN number into the matching field.
+     The form must not require sign-in and must be accepting responses. */
+  var GOOGLE_FORM = {
+    action: "https://docs.google.com/forms/d/e/1FAIpQLScnRhgmkLTpdPq5e63EgpM4_YanAIEvo1zq4EJceDIdyCRyuA/formResponse",
+    fields: { name: "entry.2052856706", nickname: "entry.1340230335", phone: "entry.1161564355", dinner: "entry.1276046545" },
+    dinnerLabels: { Yes: "Yes", No: "No" }   // the exact option text in your Google Form
+  };
+
   /* Optional: a video file you host yourself, e.g. "assets/bg.mp4". It replaces the YouTube embed,
      so there are never any ads. Only use footage you have the rights to. */
   var BG_VIDEO = "assets/BEYBLADEX-stay-gold-ado-jax-jones.webm";
@@ -575,9 +588,19 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
     e.preventDefault();
     var d = validate(); if (!d) return;
     try { localStorage.setItem("bey-showdown-reg", JSON.stringify(d)); } catch (err) { /* storage unavailable */ }
-    if (!FORM_ENDPOINT) { showDone(d, false); return; }
+    var gf = GOOGLE_FORM, useGoogle = !!(gf.action && gf.fields.name && gf.fields.nickname && gf.fields.phone && gf.fields.dinner);
+    if (!useGoogle && !FORM_ENDPOINT) { showDone(d, false); return; }
     var btn = $("submitBtn"); btn.disabled = true; btn.textContent = "Sending...";
-    fetch(FORM_ENDPOINT, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(d) })
+    var req;
+    if (useGoogle) {
+      var body = new URLSearchParams();
+      body.set(gf.fields.name, d.name); body.set(gf.fields.nickname, d.nickname); body.set(gf.fields.phone, d.phone);
+      body.set(gf.fields.dinner, (gf.dinnerLabels && gf.dinnerLabels[d.dinner]) || d.dinner);
+      req = fetch(gf.action, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: body.toString() });
+    } else {
+      req = fetch(FORM_ENDPOINT, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(d) });
+    }
+    req
       .then(function () { showDone(d, true); })
       .catch(function () { showDone(d, false); })
       .finally(function () { btn.disabled = false; btn.textContent = "Lock me in"; });
