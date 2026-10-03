@@ -210,7 +210,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
 <div class="bg" aria-hidden="true">
   <div class="poster"></div>
   <iframe id="mv" title="Background video" tabindex="-1" allow="autoplay; encrypted-media"
-    src="https://www.youtube-nocookie.com/embed/oUwKcuQmVHk?autoplay=1&mute=1&controls=0&loop=1&playlist=oUwKcuQmVHk&playsinline=1&modestbranding=1&rel=0&disablekb=1&iv_load_policy=3&cc_load_policy=0&fs=0&enablejsapi=1"></iframe>
+    data-src="https://www.youtube-nocookie.com/embed/oUwKcuQmVHk?autoplay=1&mute=1&controls=0&loop=1&playlist=oUwKcuQmVHk&playsinline=1&modestbranding=1&rel=0&disablekb=1&iv_load_policy=3&cc_load_policy=0&fs=0&enablejsapi=1"></iframe>
   <div class="scrim" id="scrim"></div>
   <div class="grain"></div>
 </div>
@@ -372,7 +372,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
 
   /* Optional: a video file you host yourself, e.g. "assets/bg.mp4". It replaces the YouTube embed,
      so there are never any ads. Only use footage you have the rights to. */
-  var BG_VIDEO = "";
+  var BG_VIDEO = "assets/BEYBLADEX-stay-gold-ado-jax-jones.webm";
 
   // Open at the top. Phones can restore an old scroll position, so ask for manual restoration and go to the top once.
   if ("scrollRestoration" in history) history.scrollRestoration = "manual";
@@ -447,11 +447,16 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
     soundBtn.setAttribute("aria-pressed", String(soundOn));
     soundBtn.classList.toggle("nudge", !soundOn && !gestureDone);
   }
-  if (BG_VIDEO) {
+  var canFile = BG_VIDEO && document.createElement("video").canPlayType("video/webm; codecs=vp9") !== "";
+  if (canFile || (BG_VIDEO && !/\.webm$/i.test(BG_VIDEO))) {
     vidEl = document.createElement("video"); vidEl.className = "bgvid"; vidEl.src = BG_VIDEO;
-    vidEl.muted = true; vidEl.loop = true; vidEl.autoplay = true; vidEl.playsInline = true; vidEl.setAttribute("aria-hidden", "true");
-    mv.replaceWith(vidEl); bgEl.classList.add("on"); var pr = vidEl.play(); if (pr && pr.catch) pr.catch(function () { /* waits for a tap */ });
-  }
+    vidEl.muted = true; vidEl.loop = true; vidEl.autoplay = true; vidEl.playsInline = true; vidEl.preload = "auto";
+    vidEl.setAttribute("playsinline", ""); vidEl.setAttribute("aria-hidden", "true");
+    vidEl.addEventListener("playing", function () { bgEl.classList.add("on"); });
+    vidEl.addEventListener("error", function () { bgEl.classList.remove("on"); });
+    setTimeout(function () { if (vidEl.readyState >= 2) bgEl.classList.add("on"); }, 3000);
+    mv.replaceWith(vidEl); var pr = vidEl.play(); if (pr && pr.catch) pr.catch(function () { /* waits for a tap */ });
+  } else { mv.src = mv.getAttribute("data-src"); }
   function yt(func, args) {
     if (vidEl) return; try { mv.contentWindow.postMessage(JSON.stringify({ event: "command", func: func, args: args || [] }), "*"); } catch (e) { /* embed blocked */ } }
   function setSound(on) {
@@ -478,7 +483,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
     bgEl.classList.add("on");
     try { mv.contentWindow.postMessage(JSON.stringify({ event: "listening", id: 1 }), "*"); } catch (err) { /* ignore */ }
   });
-  document.addEventListener("visibilitychange", function () { if (!document.hidden) yt("playVideo"); });
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) { if (vidEl) vidEl.play(); else yt("playVideo"); } });
   soundBtn.addEventListener("click", function () { setSound(!soundOn); });
 
   // The video starts muted so it plays by itself. Browsers only accept a real tap, click or key press as permission
