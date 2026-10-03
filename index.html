@@ -107,7 +107,15 @@ a { color: var(--gold); }
 .enter { pointer-events: auto; justify-self: center; margin-top: 8px; font: 800 18px/1 var(--f-serif); letter-spacing: .12em; text-transform: uppercase; color: #231600; background: var(--gold-grad); border: 0; padding: 18px 34px; cursor: pointer; box-shadow: 0 0 40px rgba(217,180,90,.35); transition: transform .15s; }
 .enter:hover { transform: translateY(-2px); }
 .enter small { display: block; margin-top: 7px; font: 600 12px/1 var(--f-cond); letter-spacing: .3em; opacity: .75; }
-.entered .enter { display: none; }
+.modal { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 16px; background: rgba(5, 7, 15, .6); backdrop-filter: blur(5px); }
+.entered .modal { display: none; }
+.modal-card { width: min(100%, 380px); text-align: center; display: grid; gap: 14px; justify-items: center; padding: 32px 24px 26px; background: var(--panel); border: 1px solid var(--line); box-shadow: 0 0 60px rgba(217, 180, 90, .18); animation: pop .35s cubic-bezier(.2, 1.3, .4, 1) both; }
+.modal-card .spark { width: 34px; height: 34px; }
+.modal-card h2 { margin: 0; font: 800 30px/1.1 var(--f-serif); text-transform: uppercase; letter-spacing: .04em; }
+.modal-card p { margin: 0 0 6px; color: var(--muted); }
+.modal-card .enter { width: 100%; margin-top: 0; }
+.modal-card .ghost { justify-self: center; border-color: transparent; color: var(--muted); }
+@keyframes pop { from { transform: scale(.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 html.locked, html.locked body { overflow: hidden; overscroll-behavior: none; }
 .hint { opacity: 0; }
 .entered .hint { opacity: 1; }
@@ -207,6 +215,17 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
   <div class="grain"></div>
 </div>
 
+<!-- Start pop-up: the tap is what lets the browser play the video with sound -->
+<div class="modal" id="gate" role="dialog" aria-modal="true" aria-labelledby="gateTitle">
+  <div class="modal-card">
+    <span class="spark"><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 0 C53 30 70 47 100 50 C70 53 53 70 50 100 C47 70 30 53 0 50 C30 47 47 30 50 0Z"/></svg></span>
+    <h2 id="gateTitle" class="gold">Best with sound</h2>
+    <p>Tap below to start the show with sound on.</p>
+    <button class="enter" id="enterSound" type="button">Enter with sound</button>
+    <button class="ghost" id="enterMuted" type="button">Continue muted</button>
+  </div>
+</div>
+
 <div class="top">
   <button class="chip" id="soundBtn" type="button" aria-pressed="false">Tap for sound</button>
   <a class="chip" id="skip" href="#invite">Skip intro</a>
@@ -221,7 +240,6 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
       <div class="eyebrow">Friends only &middot; 8 Nov 2026</div>
       <h1>Bey<br>Show<span class="last">down<span class="spark"><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 0 C53 30 70 47 100 50 C70 53 53 70 50 100 C47 70 30 53 0 50 C30 47 47 30 50 0Z"/></svg></span></span></h1>
       <div class="sub">A beyblade tournament for friends</div>
-      <button class="enter" id="enter" type="button">Enter<small>Sound on</small></button>
     </div>
 
 
@@ -356,29 +374,6 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
      so there are never any ads. Only use footage you have the rights to. */
   var BG_VIDEO = "";
 
-  /* Debug mode: open the page with ?debug on the end of the address to see on screen what moves the scroll position. */
-  if (/[?&]debug\b/.test(window.location.search)) {
-    var dbg = document.createElement("pre");
-    dbg.style.cssText = "position:fixed;left:0;right:0;bottom:0;max-height:42vh;overflow:auto;margin:0;padding:8px;z-index:99;background:rgba(0,0,0,.88);color:#9f9;font:11px/1.35 monospace;white-space:pre-wrap;pointer-events:none";
-    document.documentElement.appendChild(dbg);
-    var dlog = function (m) { dbg.textContent = Math.round(performance.now()) + "ms " + m + "\n" + dbg.textContent.slice(0, 3000); };
-    var nav = (performance.getEntriesByType("navigation")[0] || {}).type;
-    dlog("nav=" + nav + " hash=" + window.location.hash + " restore=" + history.scrollRestoration + " y=" + Math.round(window.scrollY));
-    ["scrollTo", "scroll", "scrollBy"].forEach(function (n) {
-      var o = window[n]; window[n] = function () { dlog(n + " " + JSON.stringify(arguments[0]) + " from " + ((new Error().stack || "").split("\n")[2] || "").trim().slice(-50)); return o.apply(this, arguments); };
-    });
-    var osi = Element.prototype.scrollIntoView;
-    Element.prototype.scrollIntoView = function () { dlog("scrollIntoView " + (this.id || this.className)); return osi.apply(this, arguments); };
-    var ofo = HTMLElement.prototype.focus;
-    HTMLElement.prototype.focus = function () { dlog("focus() " + (this.id || this.tagName)); return ofo.apply(this, arguments); };
-    var lastY = 0;
-    window.addEventListener("scroll", function () { var y = Math.round(window.scrollY); if (Math.abs(y - lastY) > 40) { dlog("scroll y=" + y); lastY = y; } }, { passive: true });
-    document.addEventListener("focusin", function (e) { dlog("focusin " + (e.target.id || e.target.tagName)); });
-    window.addEventListener("hashchange", function () { dlog("hashchange " + window.location.hash); });
-    window.addEventListener("touchstart", function () { dlog("touchstart"); }, { passive: true, capture: true });
-    window.addEventListener("load", function () { dlog("load y=" + Math.round(window.scrollY)); });
-  }
-
   // Open at the top. Phones can restore an old scroll position, so ask for manual restoration and go to the top once.
   if ("scrollRestoration" in history) history.scrollRestoration = "manual";
   function toTop() { if (!window.location.hash && window.scrollY > 0) window.scrollTo(0, 0); }
@@ -510,23 +505,26 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
   // Start gate: the first screen waits for a tap on Enter. That tap is the permission browsers need to play the video with sound,
   // and the page cannot be scrolled (or scrolled by the browser) until then.
   var rootEl = document.documentElement;
-  function enter() {
+  function enter(withSound) {
     if (entered) return; entered = true; gestureDone = true;
     rootEl.classList.remove("locked"); document.body.classList.add("entered");
     window.scrollTo(0, 0);
-    setSound(true);
+    if (withSound) setSound(true); else renderSound();
   }
   if (window.location.hash || window.scrollY > 40) { entered = true; document.body.classList.add("entered"); }
   else {
     rootEl.classList.add("locked");
     window.addEventListener("scroll", function () { if (!entered && window.scrollY > 0) window.scrollTo(0, 0); }, { passive: true });
   }
-  $("enter").addEventListener("click", enter);
+  $("enterSound").addEventListener("click", function () { enter(true); });
+  $("enterMuted").addEventListener("click", function () { enter(false); });
+  window.addEventListener("keydown", function (e) { if (e.key === "Escape") enter(false); });
+  if (!entered) try { $("enterSound").focus({ preventScroll: true }); } catch (err) { /* ignore */ }
   // "Skip intro" is handled in script, and ignores any tap in the first 1.5 seconds (a finger left over from opening the link can land on it).
   $("skip").addEventListener("click", function (e) {
     e.preventDefault();
     if (!e.isTrusted || performance.now() < 1500) return;
-    var wasLocked = !entered; enter();
+    var wasLocked = !entered; enter(true);
     $("invite").scrollIntoView({ behavior: wasLocked || reduce ? "auto" : "smooth", block: "start" });
   });
 
