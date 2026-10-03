@@ -348,17 +348,34 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
      so there are never any ads. Only use footage you have the rights to. */
   var BG_VIDEO = "";
 
-  // Always open at the top, even on a phone that would restore an old scroll position (unless the link has a #section).
+  /* Debug mode: open the page with ?debug on the end of the address to see on screen what moves the scroll position. */
+  if (/[?&]debug\b/.test(window.location.search)) {
+    var dbg = document.createElement("pre");
+    dbg.style.cssText = "position:fixed;left:0;right:0;bottom:0;max-height:42vh;overflow:auto;margin:0;padding:8px;z-index:99;background:rgba(0,0,0,.88);color:#9f9;font:11px/1.35 monospace;white-space:pre-wrap;pointer-events:none";
+    document.documentElement.appendChild(dbg);
+    var dlog = function (m) { dbg.textContent = Math.round(performance.now()) + "ms " + m + "\n" + dbg.textContent.slice(0, 3000); };
+    var nav = (performance.getEntriesByType("navigation")[0] || {}).type;
+    dlog("nav=" + nav + " hash=" + window.location.hash + " restore=" + history.scrollRestoration + " y=" + Math.round(window.scrollY));
+    ["scrollTo", "scroll", "scrollBy"].forEach(function (n) {
+      var o = window[n]; window[n] = function () { dlog(n + " " + JSON.stringify(arguments[0]) + " from " + ((new Error().stack || "").split("\n")[2] || "").trim().slice(-50)); return o.apply(this, arguments); };
+    });
+    var osi = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = function () { dlog("scrollIntoView " + (this.id || this.className)); return osi.apply(this, arguments); };
+    var ofo = HTMLElement.prototype.focus;
+    HTMLElement.prototype.focus = function () { dlog("focus() " + (this.id || this.tagName)); return ofo.apply(this, arguments); };
+    var lastY = 0;
+    window.addEventListener("scroll", function () { var y = Math.round(window.scrollY); if (Math.abs(y - lastY) > 40) { dlog("scroll y=" + y); lastY = y; } }, { passive: true });
+    document.addEventListener("focusin", function (e) { dlog("focusin " + (e.target.id || e.target.tagName)); });
+    window.addEventListener("hashchange", function () { dlog("hashchange " + window.location.hash); });
+    window.addEventListener("touchstart", function () { dlog("touchstart"); }, { passive: true, capture: true });
+    window.addEventListener("load", function () { dlog("load y=" + Math.round(window.scrollY)); });
+  }
+
+  // Open at the top. Phones can restore an old scroll position, so ask for manual restoration and go to the top once.
   if ("scrollRestoration" in history) history.scrollRestoration = "manual";
-  function toTop() { if (!window.location.hash) window.scrollTo({ top: 0, left: 0, behavior: "instant" }); }
+  function toTop() { if (!window.location.hash && window.scrollY > 0) window.scrollTo(0, 0); }
   toTop();
-  // Some phones restore the old scroll position late (after fonts, images or the video frame load), so keep
-  // pulling back to the top for the first few seconds, until the visitor touches or scrolls the page.
-  var userMoved = false;
-  ["touchstart", "wheel", "keydown", "pointerdown", "mousedown"].forEach(function (ev) { window.addEventListener(ev, function () { userMoved = true; }, { passive: true, once: true }); });
-  var topTimer = setInterval(function () { if (userMoved) clearInterval(topTimer); else toTop(); }, 120);
-  setTimeout(function () { clearInterval(topTimer); }, 4000);
-  window.addEventListener("load", function () { toTop(); setTimeout(toTop, 120); });
+  window.addEventListener("load", toTop);
   window.addEventListener("pageshow", function (e) { if (e.persisted) toTop(); });
 
   var $ = function (id) { return document.getElementById(id); };
@@ -463,19 +480,24 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
 
   // The video starts muted so it plays by itself. Browsers only accept a real tap, click or key press as permission
   // for sound (a script-made click is ignored), so sound is tried at the first scroll and guaranteed at the first real gesture.
-  var scrollTried = false;
   function backToMuted() { soundOn = false; if (vidEl) { vidEl.muted = true; vidEl.play(); } else { yt("mute"); yt("playVideo"); } renderSound(); }
-  function tryScrollSound() {
-    if (scrollTried || gestureDone) return; scrollTried = true;
-    if (vidEl) { vidEl.muted = false; var pr = vidEl.play(); if (pr && pr.catch) pr.catch(backToMuted); soundOn = true; return; }
-    setSound(true);
-    // if the browser refused, it pauses or keeps the player muted: go back to muted playback so the video never stays stuck
-    setTimeout(function () { if (!gestureDone && (lastMuted || lastState === 2)) backToMuted(); }, 900);
-  }
-  ["wheel", "touchmove", "scroll"].forEach(function (ev) { window.addEventListener(ev, tryScrollSound, { passive: true }); });
-  ["pointerdown", "touchend", "keydown", "click"].forEach(function (ev) {
-    window.addEventListener(ev, function () { if (gestureDone) return; gestureDone = true; if (!soundOn || lastMuted) setSound(true); else renderSound(); }, { passive: true });
+  // Sound is only requested on a real tap (click) or key press. Scroll and swipe gestures do not count as permission,
+  // and asking for sound on them makes the browser pause the video, which is what left it stuck.
+  ["click", "keydown"].forEach(function (ev) {
+    window.addEventListener(ev, function (e) {
+      if (gestureDone || !e.isTrusted) return; gestureDone = true;
+      if (!soundOn || lastMuted) setSound(true); else renderSound();
+    }, { passive: true });
   });
+  // Watchdog: the player has no controls, so if it ever sits paused, start it again; if it will not play with sound, go back to muted.
+  var stuck = 0;
+  setInterval(function () {
+    if (vidEl || document.hidden) return;
+    if (lastState === 2 || lastState === 5 || lastState === -1) {
+      stuck++;
+      if (stuck >= 2 && soundOn) { backToMuted(); stuck = 0; } else yt("playVideo");
+    } else stuck = 0;
+  }, 1500);
 
   // "Skip intro" is handled in script, and ignores any tap in the first 1.5 seconds. When a link is opened from another
   // app, the finger that tapped it can land on this button in the new page and jump straight to the invitation.
