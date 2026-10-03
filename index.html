@@ -104,6 +104,13 @@ a { color: var(--gold); }
   font: 600 13px/1 var(--f-cond); letter-spacing: .2em; text-transform: uppercase; color: var(--text); text-decoration: none;
   padding: 10px 14px; border: 1px solid var(--line); border-radius: 999px; background: rgba(5, 7, 15, .55); backdrop-filter: blur(6px); cursor: pointer;
 }
+.enter { pointer-events: auto; justify-self: center; margin-top: 8px; font: 800 18px/1 var(--f-serif); letter-spacing: .12em; text-transform: uppercase; color: #231600; background: var(--gold-grad); border: 0; padding: 18px 34px; cursor: pointer; box-shadow: 0 0 40px rgba(217,180,90,.35); transition: transform .15s; }
+.enter:hover { transform: translateY(-2px); }
+.enter small { display: block; margin-top: 7px; font: 600 12px/1 var(--f-cond); letter-spacing: .3em; opacity: .75; }
+.entered .enter { display: none; }
+html.locked, html.locked body { overflow: hidden; overscroll-behavior: none; }
+.hint { opacity: 0; }
+.entered .hint { opacity: 1; }
 .chip.nudge { animation: nudge 4s ease-in-out infinite; }
 @keyframes nudge { 0%, 70%, 100% { box-shadow: 0 0 0 0 rgba(217, 180, 90, 0); border-color: var(--line); } 82% { box-shadow: 0 0 0 6px rgba(217, 180, 90, .18); border-color: var(--gold); } }
 .chip:hover { border-color: var(--gold); color: var(--gold-hi); }
@@ -214,6 +221,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
       <div class="eyebrow">Friends only &middot; 8 Nov 2026</div>
       <h1>Bey<br>Show<span class="last">down<span class="spark"><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 0 C53 30 70 47 100 50 C70 53 53 70 50 100 C47 70 30 53 0 50 C30 47 47 30 50 0Z"/></svg></span></span></h1>
       <div class="sub">A beyblade tournament for friends</div>
+      <button class="enter" id="enter" type="button">Enter<small>Sound on</small></button>
     </div>
 
 
@@ -385,7 +393,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
   /* ================= SCROLL-SCRUBBED KINETIC INTRO ================= */
   var track = $("track"), titleEl = $("title"), hint = $("hint");
   var flash = $("flash"), fadeout = $("fadeout"), callBox = $("callBox"), judgeTag = $("judgeTag"), meter = $("meterFill"), scrim = $("scrim");
-  var ps = 0, lastCall = "";
+  var ps = 0, lastCall = "", entered = false;
 
   // Timeline along the pinned scroll (0..1)
   var T = { c3: .2, c2: .32, c1: .44, go: .56, fadeStart: .74 };
@@ -401,7 +409,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
     var tp = clamp(p / .12, 0, 1);
     titleEl.style.opacity = 1 - tp;
     titleEl.style.transform = "translateY(" + (-tp * 70) + "px) scale(" + (1 + tp * .1) + ")";
-    hint.style.opacity = 1 - clamp(p / .05, 0, 1);
+    hint.style.opacity = entered ? 1 - clamp(p / .05, 0, 1) : 0;
     meter.style.transform = "scaleY(" + p + ")";
 
     // judge countdown
@@ -499,12 +507,27 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
     } else stuck = 0;
   }, 1500);
 
-  // "Skip intro" is handled in script, and ignores any tap in the first 1.5 seconds. When a link is opened from another
-  // app, the finger that tapped it can land on this button in the new page and jump straight to the invitation.
+  // Start gate: the first screen waits for a tap on Enter. That tap is the permission browsers need to play the video with sound,
+  // and the page cannot be scrolled (or scrolled by the browser) until then.
+  var rootEl = document.documentElement;
+  function enter() {
+    if (entered) return; entered = true; gestureDone = true;
+    rootEl.classList.remove("locked"); document.body.classList.add("entered");
+    window.scrollTo(0, 0);
+    setSound(true);
+  }
+  if (window.location.hash || window.scrollY > 40) { entered = true; document.body.classList.add("entered"); }
+  else {
+    rootEl.classList.add("locked");
+    window.addEventListener("scroll", function () { if (!entered && window.scrollY > 0) window.scrollTo(0, 0); }, { passive: true });
+  }
+  $("enter").addEventListener("click", enter);
+  // "Skip intro" is handled in script, and ignores any tap in the first 1.5 seconds (a finger left over from opening the link can land on it).
   $("skip").addEventListener("click", function (e) {
     e.preventDefault();
     if (!e.isTrusted || performance.now() < 1500) return;
-    $("invite").scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+    var wasLocked = !entered; enter();
+    $("invite").scrollIntoView({ behavior: wasLocked || reduce ? "auto" : "smooth", block: "start" });
   });
 
   /* ================= REGISTRATION FORM ================= */
