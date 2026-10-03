@@ -202,7 +202,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
 
 <div class="top">
   <button class="chip" id="soundBtn" type="button" aria-pressed="false">Tap for sound</button>
-  <a class="chip" href="#invite">Skip intro</a>
+  <a class="chip" id="skip" href="#invite">Skip intro</a>
 </div>
 
 <div class="page">
@@ -475,6 +475,14 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
   ["wheel", "touchmove", "scroll"].forEach(function (ev) { window.addEventListener(ev, tryScrollSound, { passive: true }); });
   ["pointerdown", "touchend", "keydown", "click"].forEach(function (ev) {
     window.addEventListener(ev, function () { if (gestureDone) return; gestureDone = true; if (!soundOn || lastMuted) setSound(true); else renderSound(); }, { passive: true });
+  });
+
+  // "Skip intro" is handled in script, and ignores any tap in the first 1.5 seconds. When a link is opened from another
+  // app, the finger that tapped it can land on this button in the new page and jump straight to the invitation.
+  $("skip").addEventListener("click", function (e) {
+    e.preventDefault();
+    if (!e.isTrusted || performance.now() < 1500) return;
+    $("invite").scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
   });
 
   /* ================= REGISTRATION FORM ================= */
