@@ -34,7 +34,8 @@
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; overflow-anchor: none; }
+body { overflow-anchor: none; }
 body { margin: 0; background: var(--ink); color: var(--text); font: 400 17px/1.55 var(--f-body); -webkit-font-smoothing: antialiased; }
 a { color: var(--gold); }
 :focus-visible { outline: 3px solid var(--gold-hi); outline-offset: 3px; }
@@ -351,6 +352,12 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
   if ("scrollRestoration" in history) history.scrollRestoration = "manual";
   function toTop() { if (!window.location.hash) window.scrollTo({ top: 0, left: 0, behavior: "instant" }); }
   toTop();
+  // Some phones restore the old scroll position late (after fonts, images or the video frame load), so keep
+  // pulling back to the top for the first few seconds, until the visitor touches or scrolls the page.
+  var userMoved = false;
+  ["touchstart", "wheel", "keydown", "pointerdown", "mousedown"].forEach(function (ev) { window.addEventListener(ev, function () { userMoved = true; }, { passive: true, once: true }); });
+  var topTimer = setInterval(function () { if (userMoved) clearInterval(topTimer); else toTop(); }, 120);
+  setTimeout(function () { clearInterval(topTimer); }, 4000);
   window.addEventListener("load", function () { toTop(); setTimeout(toTop, 120); });
   window.addEventListener("pageshow", function (e) { if (e.persisted) toTop(); });
 
