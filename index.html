@@ -43,12 +43,12 @@ a { color: var(--gold); }
 .bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; background: var(--ink); }
 .bg .poster { position: absolute; inset: 0; background: radial-gradient(ellipse at 30% 20%, #1a2a52 0%, transparent 55%), radial-gradient(ellipse at 75% 70%, #2a1450 0%, transparent 55%), linear-gradient(#070b18, #0b1226); }
 .bg .poster::after { content: ""; position: absolute; inset: 0; background: url("https://i.ytimg.com/vi/oUwKcuQmVHk/maxresdefault.jpg") center / cover no-repeat; opacity: .9; filter: blur(8px); transform: scale(1.06); }
-.bg iframe {
-  position: absolute; top: 50%; left: 50%; border: 0; pointer-events: none;
+.bg iframe, .bg .bgvid {
+  position: absolute; top: 50%; left: 50%; border: 0; pointer-events: none; object-fit: cover;
   width: max(100vw, 177.78vh); height: max(56.25vw, 100vh); transform: translate(-50%, -50%) scale(1.06);
   filter: blur(7px) saturate(1.15); opacity: 0; transition: opacity 1s;
 }
-.bg.on iframe { opacity: 1; }
+.bg.on iframe, .bg.on .bgvid { opacity: 1; }
 .scrim { position: absolute; inset: 0; background: rgba(5, 7, 15, 1); opacity: var(--scrim, .5); pointer-events: none; }
 .grain {
   position: absolute; inset: 0; pointer-events: none; opacity: .1; mix-blend-mode: overlay;
@@ -337,6 +337,10 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
      ------------------------------------------------------------------ */
   var FORM_ENDPOINT = "";
 
+  /* Optional: a video file you host yourself, e.g. "assets/bg.mp4". It replaces the YouTube embed,
+     so there are never any ads. Only use footage you have the rights to. */
+  var BG_VIDEO = "";
+
   var $ = function (id) { return document.getElementById(id); };
   var clamp = function (v, a, b) { return Math.max(a, Math.min(b, v)); };
   var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -396,10 +400,18 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
 
   /* ---------- YouTube player: sound on tap, fall back to the poster on embed errors ---------- */
   var soundOn = false, mv = $("mv"), soundBtn = $("soundBtn"), bgEl = document.querySelector(".bg");
-  function yt(func, args) { try { mv.contentWindow.postMessage(JSON.stringify({ event: "command", func: func, args: args || [] }), "*"); } catch (e) { /* embed blocked */ } }
+  var vidEl = null;
+  if (BG_VIDEO) {
+    vidEl = document.createElement("video"); vidEl.className = "bgvid"; vidEl.src = BG_VIDEO;
+    vidEl.muted = true; vidEl.loop = true; vidEl.autoplay = true; vidEl.playsInline = true; vidEl.setAttribute("aria-hidden", "true");
+    mv.replaceWith(vidEl); bgEl.classList.add("on"); var pr = vidEl.play(); if (pr && pr.catch) pr.catch(function () { /* waits for a tap */ });
+  }
+  function yt(func, args) {
+    if (vidEl) return; try { mv.contentWindow.postMessage(JSON.stringify({ event: "command", func: func, args: args || [] }), "*"); } catch (e) { /* embed blocked */ } }
   function setSound(on) {
     soundOn = on;
-    yt(on ? "unMute" : "mute"); if (on) { yt("setVolume", [70]); yt("playVideo"); }
+    if (vidEl) { vidEl.muted = !on; vidEl.volume = .7; vidEl.play(); }
+    else { yt(on ? "unMute" : "mute"); if (on) { yt("setVolume", [70]); yt("playVideo"); } }
     soundBtn.textContent = on ? "Sound on" : "Sound off";
     soundBtn.setAttribute("aria-pressed", String(on));
   }
@@ -423,14 +435,12 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
   document.addEventListener("visibilitychange", function () { if (!document.hidden) yt("playVideo"); });
   soundBtn.addEventListener("click", function () { setSound(!soundOn); });
 
-  // The page opens straight into the intro. Browsers only allow sound once the visitor has interacted,
-  // so sound is requested right away and again on the first tap, key press or scroll gesture.
+  // The video starts muted so it plays by itself. Unmuting without a tap makes browsers pause it,
+  // so sound switches on at the first real tap, click or key press (scrolling alone does not count).
   var triedSound = false;
-  function wantSound() { if (!soundOn) setSound(true); }
-  ["pointerdown", "touchstart", "keydown", "wheel", "click"].forEach(function (ev) {
-    window.addEventListener(ev, function once() { if (triedSound) return; triedSound = true; wantSound(); }, { passive: true });
+  ["pointerdown", "touchend", "keydown", "click"].forEach(function (ev) {
+    window.addEventListener(ev, function () { if (triedSound) return; triedSound = true; if (!soundOn) setSound(true); }, { passive: true });
   });
-  mv.addEventListener("load", function () { setTimeout(wantSound, 800); });
 
   /* ================= REGISTRATION FORM ================= */
   var form = $("regForm"), done = $("done");
