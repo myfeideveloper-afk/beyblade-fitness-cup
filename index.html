@@ -183,6 +183,48 @@ legend { margin-bottom: 10px; }
 .go-btn:active { transform: translateY(1px); }
 .go-btn:disabled { filter: grayscale(.6); cursor: wait; }
 .done { display: none; }
+.done.show .done-msg { display: grid; gap: 18px; }
+.done-msg { display: grid; gap: 18px; animation: msgUp .6s ease-out both; }
+.done-title { margin: 0; font: 800 clamp(28px, 6vw, 46px)/1.05 var(--f-serif); text-transform: uppercase; letter-spacing: .03em; text-align: center; }
+.done-msg .eyebrow { text-align: center; }
+@keyframes msgUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+/* Success: on submit the two blades fly in over the form from the left and right, smash together in the middle with a flash,
+   then fade out and the success message takes the form's place. The overlay takes no space of its own. */
+.card form { transition: opacity .3s; }
+.card.smashing form { opacity: .3; pointer-events: none; }
+.smash { --w: clamp(110px, 27vw, 170px); --dx: 420px; --gap: calc(var(--w) * .46);
+  position: absolute; inset: 0; z-index: 3; pointer-events: none; overflow: hidden; display: none; }
+.smash.play { display: block; }
+.sbw, .sb { position: absolute; }
+.sbw { top: 50%; left: 50%; width: var(--w); height: var(--w); margin: calc(var(--w) / -2) 0 0 calc(var(--w) / -2); opacity: 0; will-change: transform, opacity; }
+.sb { inset: 0; width: 100%; height: 100%; filter: drop-shadow(0 10px 16px rgba(0, 0, 0, .65)); }
+.smash.play .sbw.red { animation: hitL 1.3s cubic-bezier(.4, 0, .6, 1) both; }
+.smash.play .sbw.blue { animation: hitR 1.3s cubic-bezier(.4, 0, .6, 1) both; }
+.smash.play .sbw.red .sb { animation: spinIn 1.3s ease-out both; }
+.smash.play .sbw.blue .sb { animation: spinInR 1.3s ease-out both; }
+@keyframes hitL { 0% { opacity: 0; transform: translateX(calc(var(--dx) * -1)) scale(.6); } 8% { opacity: 1; }
+  42% { opacity: 1; transform: translateX(calc(var(--gap) * -1)) scale(1.05); } 48% { transform: translateX(calc(var(--gap) * -.55)) scale(1.14); }
+  66% { opacity: 1; transform: translateX(calc(var(--gap) * -1.7)) scale(1); } 100% { opacity: 0; transform: translateX(calc(var(--gap) * -2.4)) scale(.85); } }
+@keyframes hitR { 0% { opacity: 0; transform: translateX(var(--dx)) scale(.6); } 8% { opacity: 1; }
+  42% { opacity: 1; transform: translateX(var(--gap)) scale(1.05); } 48% { transform: translateX(calc(var(--gap) * .55)) scale(1.14); }
+  66% { opacity: 1; transform: translateX(calc(var(--gap) * 1.7)) scale(1); } 100% { opacity: 0; transform: translateX(calc(var(--gap) * 2.4)) scale(.85); } }
+@keyframes spinIn { to { transform: rotate(2160deg); } }
+@keyframes spinInR { to { transform: rotate(-2160deg); } }
+.sm-flash, .sm-ring, .sm-sparks { position: absolute; top: 50%; left: 50%; pointer-events: none; }
+.sm-flash { width: calc(var(--w) * 3.4); height: calc(var(--w) * 3.4); margin: calc(var(--w) * -1.7) 0 0 calc(var(--w) * -1.7); border-radius: 50%; opacity: 0;
+  background: radial-gradient(circle, #fff 0%, rgba(255, 240, 184, .95) 18%, rgba(217, 180, 90, .45) 42%, rgba(217, 180, 90, 0) 70%); mix-blend-mode: screen; }
+.smash.play .sm-flash { animation: flash 1.3s ease-out both; }
+@keyframes flash { 0%, 40% { opacity: 0; transform: scale(.2); } 44% { opacity: 1; transform: scale(.9); } 100% { opacity: 0; transform: scale(1.5); } }
+.sm-ring { width: 60px; height: 60px; margin: -30px 0 0 -30px; border: 3px solid var(--gold-hi); border-radius: 50%; opacity: 0; box-shadow: 0 0 18px rgba(255, 224, 140, .8); }
+.smash.play .sm-ring { animation: ring .9s ease-out .54s both; }
+.smash.play .sm-ring.r2 { animation-delay: .65s; border-color: var(--magenta); box-shadow: 0 0 18px rgba(228, 68, 200, .7); }
+@keyframes ring { 0% { opacity: .95; transform: scale(.2); } 100% { opacity: 0; transform: scale(6.5); } }
+.sm-sparks span { position: absolute; left: -2px; top: -2px; width: 4px; height: 14px; border-radius: 2px; opacity: 0; background: linear-gradient(var(--gold-hi), var(--gold)); transform-origin: 50% 50%; }
+.smash.play .sm-sparks span { animation: spark .7s ease-out .54s forwards; }
+@keyframes spark { 0% { opacity: 1; transform: translate(0, 0) rotate(var(--r)) scaleY(1); } 100% { opacity: 0; transform: translate(var(--x), var(--y)) rotate(var(--r)) scaleY(.3); } }
+.card.celebrate { animation: glow 1.2s ease-out; }
+@keyframes glow { 0% { box-shadow: 0 0 0 rgba(217, 180, 90, 0); } 30% { box-shadow: 0 0 90px rgba(255, 224, 140, .55); } 100% { box-shadow: 0 0 0 rgba(217, 180, 90, 0); } }
 .done.show { display: grid; gap: 18px; }
 .stub { border: 1px dashed var(--line); padding: 20px; display: grid; gap: 4px; background: rgba(5, 7, 15, .75); }
 .stub .nick { font: 800 clamp(30px, 7vw, 50px)/1 var(--f-serif); text-transform: uppercase; overflow-wrap: anywhere; }
@@ -201,6 +243,8 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
   .marquee div { animation: none; }
   .chip.nudge { animation: none; border-color: var(--gold); }
+  .smash, .card.celebrate { display: none !important; animation: none !important; }
+  .done-msg { animation: none !important; }
 }
 </style>
 </head>
@@ -302,6 +346,13 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
       <h3 id="regTitle" class="gold">Register your blader</h3>
       <p>Takes a minute. Answer every field so we can lock in your spot.</p>
 
+      <div class="smash" id="smash" aria-hidden="true">
+        <div class="sm-flash"></div><div class="sm-ring"></div><div class="sm-ring r2"></div>
+        <div class="sbw red"><img class="sb" src="assets/bey-red.png" alt="" width="640" height="640"></div>
+        <div class="sbw blue"><img class="sb" src="assets/bey-blue.png" alt="" width="640" height="640"></div>
+        <div class="sm-sparks" id="sparks"></div>
+      </div>
+
       <form id="regForm" novalidate>
         <div class="field" data-f="name">
           <label for="name">Name</label>
@@ -337,6 +388,8 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
       </form>
 
       <div class="done" id="done" aria-live="polite">
+        <div class="done-msg">
+        <h4 class="done-title gold" id="doneTitle">Registration successful</h4>
         <div class="eyebrow" id="doneEyebrow">Blader locked in</div>
         <div class="stub">
           <span class="k">Blader name</span>
@@ -346,6 +399,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
         <p class="help" id="doneNote"></p>
         <button class="ghost" id="copyBtn" type="button">Copy my details</button>
         <button class="ghost" id="againBtn" type="button">Register another blader</button>
+        </div>
       </div>
     </div>
   </div>
@@ -572,6 +626,20 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
   ["name", "nick", "phone"].forEach(function (f) { $(f).addEventListener("input", function () { setErr(f); }); });
   form.querySelectorAll('input[name="dinner"]').forEach(function (r) { r.addEventListener("change", function () { setErr("dinner"); }); });
 
+  // two blades fly in over the form, smash together (flash, shock rings, sparks), then fade out
+  function playSmash(card) {
+    var sm = $("smash"), box = $("sparks"); box.innerHTML = "";
+    sm.style.setProperty("--dx", Math.round(card.clientWidth / 2 + 140) + "px");
+    for (var i = 0; i < 22; i++) {
+      var a = (i / 22) * Math.PI * 2 + Math.random() * .3, dist = 70 + Math.random() * 110, s = document.createElement("span");
+      s.style.setProperty("--x", Math.round(Math.cos(a) * dist) + "px"); s.style.setProperty("--y", Math.round(Math.sin(a) * dist) + "px");
+      s.style.setProperty("--r", Math.round(a * 180 / Math.PI + 90) + "deg"); box.appendChild(s);
+    }
+    card.classList.remove("celebrate"); sm.classList.remove("play"); void sm.offsetWidth;
+    card.classList.add("smashing"); sm.classList.add("play");
+    setTimeout(function () { card.classList.add("celebrate"); }, 540);
+  }
+
   function showDone(d, sent) {
     lastSummary = "Bey Showdown, 8 Nov 2026, 5-8 PM\nName: " + d.name + "\nNickname: " + d.nickname + "\nContact: " + d.phone + "\nDinner by organiser: " + d.dinner + (d.dinner === "Yes" ? " (RM10)" : "");
     $("doneNick").textContent = d.nickname;
@@ -580,8 +648,15 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
     $("doneNote").textContent = sent
       ? "Your registration was sent to the organiser. See you at the dish."
       : "Copy your details and send them to the organiser to confirm your spot.";
-    form.style.display = "none"; done.classList.add("show");
-    done.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
+    $("doneTitle").textContent = sent ? "Registration successful" : "Almost there";
+    var card = form.closest(".card");
+    function reveal() {
+      card.classList.remove("smashing"); $("smash").classList.remove("play");
+      form.style.display = "none"; done.classList.add("show");
+      card.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
+    }
+    if (sent && !reduce) { card.scrollIntoView({ behavior: "smooth", block: "center" }); playSmash(card); setTimeout(reveal, 1300); }
+    else reveal();
   }
 
   form.addEventListener("submit", function (e) {
@@ -618,7 +693,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
   });
   $("againBtn").addEventListener("click", function () {
     form.reset(); ["name", "nick", "phone", "dinner"].forEach(function (f) { setErr(f); });
-    done.classList.remove("show"); form.style.display = "grid"; $("name").focus();
+    done.classList.remove("show"); form.style.display = "grid"; $("name").focus({ preventScroll: true });
   });
 })();
 </script>
