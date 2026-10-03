@@ -102,6 +102,8 @@ a { color: var(--gold); }
   font: 600 13px/1 var(--f-cond); letter-spacing: .2em; text-transform: uppercase; color: var(--text); text-decoration: none;
   padding: 10px 14px; border: 1px solid var(--line); border-radius: 999px; background: rgba(5, 7, 15, .55); backdrop-filter: blur(6px); cursor: pointer;
 }
+.chip.nudge { animation: nudge 4s ease-in-out infinite; }
+@keyframes nudge { 0%, 70%, 100% { box-shadow: 0 0 0 0 rgba(217, 180, 90, 0); border-color: var(--line); } 82% { box-shadow: 0 0 0 6px rgba(217, 180, 90, .18); border-color: var(--gold); } }
 .chip:hover { border-color: var(--gold); color: var(--gold-hi); }
 .top { position: fixed; z-index: 5; top: max(14px, env(safe-area-inset-top, 0px)); right: 16px; display: flex; gap: 8px; }
 
@@ -179,6 +181,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
   .marquee div { animation: none; }
+  .chip.nudge { animation: none; border-color: var(--gold); }
 }
 </style>
 </head>
@@ -194,7 +197,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
 </div>
 
 <div class="top">
-  <button class="chip" id="soundBtn" type="button" aria-pressed="false">Sound off</button>
+  <button class="chip" id="soundBtn" type="button" aria-pressed="false">Tap for sound</button>
   <a class="chip" href="#invite">Skip intro</a>
 </div>
 
@@ -400,7 +403,13 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
 
   /* ---------- YouTube player: sound on tap, fall back to the poster on embed errors ---------- */
   var soundOn = false, mv = $("mv"), soundBtn = $("soundBtn"), bgEl = document.querySelector(".bg");
-  var vidEl = null;
+  var vidEl = null, lastState = -1, lastMuted = true, gestureDone = false;
+  // the label asks for a tap only until the visitor has interacted once, with a soft glow every few seconds
+  function renderSound() {
+    soundBtn.textContent = soundOn ? "Sound on" : (gestureDone ? "Sound off" : "Tap for sound");
+    soundBtn.setAttribute("aria-pressed", String(soundOn));
+    soundBtn.classList.toggle("nudge", !soundOn && !gestureDone);
+  }
   if (BG_VIDEO) {
     vidEl = document.createElement("video"); vidEl.className = "bgvid"; vidEl.src = BG_VIDEO;
     vidEl.muted = true; vidEl.loop = true; vidEl.autoplay = true; vidEl.playsInline = true; vidEl.setAttribute("aria-hidden", "true");
@@ -412,17 +421,17 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
     soundOn = on;
     if (vidEl) { vidEl.muted = !on; vidEl.volume = .7; vidEl.play(); }
     else { yt(on ? "unMute" : "mute"); if (on) { yt("setVolume", [70]); yt("playVideo"); } }
-    soundBtn.textContent = on ? "Sound on" : "Sound off";
-    soundBtn.setAttribute("aria-pressed", String(on));
+    renderSound();
   }
   window.addEventListener("message", function (e) {
     if (typeof e.data !== "string" || e.origin.indexOf("youtube") < 0) return;
     var d; try { d = JSON.parse(e.data); } catch (err) { return; }
     if (d.event === "onError") { mv.style.display = "none"; return; }
     if (d.info && typeof d.info.muted === "boolean") {
-      soundOn = !d.info.muted; soundBtn.textContent = soundOn ? "Sound on" : "Sound off"; soundBtn.setAttribute("aria-pressed", String(soundOn));
+      lastMuted = d.info.muted; soundOn = !d.info.muted; renderSound();
     }
     var st = d.info && d.info.playerState;
+    if (typeof st === "number") lastState = st;
     if (st === 1) bgEl.classList.add("on");
     // always loop: restart if it ends, and resume if anything pauses it (the player has no controls)
     if (st === 0) { yt("seekTo", [0, true]); yt("playVideo"); }
@@ -435,11 +444,20 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
   document.addEventListener("visibilitychange", function () { if (!document.hidden) yt("playVideo"); });
   soundBtn.addEventListener("click", function () { setSound(!soundOn); });
 
-  // The video starts muted so it plays by itself. Unmuting without a tap makes browsers pause it,
-  // so sound switches on at the first real tap, click or key press (scrolling alone does not count).
-  var triedSound = false;
+  // The video starts muted so it plays by itself. Browsers only accept a real tap, click or key press as permission
+  // for sound (a script-made click is ignored), so sound is tried at the first scroll and guaranteed at the first real gesture.
+  var scrollTried = false;
+  function backToMuted() { soundOn = false; if (vidEl) { vidEl.muted = true; vidEl.play(); } else { yt("mute"); yt("playVideo"); } renderSound(); }
+  function tryScrollSound() {
+    if (scrollTried || gestureDone) return; scrollTried = true;
+    if (vidEl) { vidEl.muted = false; var pr = vidEl.play(); if (pr && pr.catch) pr.catch(backToMuted); soundOn = true; return; }
+    setSound(true);
+    // if the browser refused, it pauses or keeps the player muted: go back to muted playback so the video never stays stuck
+    setTimeout(function () { if (!gestureDone && (lastMuted || lastState === 2)) backToMuted(); }, 900);
+  }
+  ["wheel", "touchmove", "scroll"].forEach(function (ev) { window.addEventListener(ev, tryScrollSound, { passive: true }); });
   ["pointerdown", "touchend", "keydown", "click"].forEach(function (ev) {
-    window.addEventListener(ev, function () { if (triedSound) return; triedSound = true; if (!soundOn) setSound(true); }, { passive: true });
+    window.addEventListener(ev, function () { if (gestureDone) return; gestureDone = true; if (!soundOn || lastMuted) setSound(true); else renderSound(); }, { passive: true });
   });
 
   /* ================= REGISTRATION FORM ================= */
