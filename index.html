@@ -198,6 +198,13 @@ html.locked, html.locked body { overflow: hidden; overscroll-behavior: none; }
 .slots li.on b { text-transform: none; letter-spacing: .02em; font-size: 17px; }
 .slots li.on span { color: var(--gold); }
 .slots li em { margin-left: auto; font: 700 11px/1 var(--f-cond); letter-spacing: .16em; text-transform: uppercase; color: #231600; background: var(--gold-grad); padding: 3px 6px; }
+.slots li.sk { border-style: solid; border-color: rgba(152, 163, 192, .14); background: rgba(255, 255, 255, .02); min-height: 44px; position: relative; overflow: hidden; }
+.slots li.sk b { display: block; height: 12px; width: 64%; background: rgba(152, 163, 192, .16); border-radius: 2px; }
+.slots li.sk span { opacity: .5; }
+.slots li.sk::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgba(217, 180, 90, .12), transparent); animation: shimmer 1.3s ease-in-out infinite; }
+@keyframes shimmer { to { transform: translateX(100%); } }
+.plcount b.sk { display: inline-block; width: 1.2em; height: .8em; vertical-align: middle; background: rgba(152, 163, 192, .25); border-radius: 2px; color: transparent; }
+@media (prefers-reduced-motion: reduce) { .slots li.sk::after { animation: none; } }
 .slots li.me { border-color: var(--gold); box-shadow: 0 0 18px rgba(217, 180, 90, .22); }
 .join-status { margin: 0; text-align: center; font: 600 16px/1.4 var(--f-body); color: var(--muted); }
 .join-status.ok { color: var(--green); }
@@ -418,7 +425,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
 </section>
 
 <!-- ======== JOINED PLAYERS ======== -->
-<section class="players" id="players" aria-labelledby="plTitle" hidden>
+<section class="players" id="players" aria-labelledby="plTitle">
   <div class="wrap">
     <div class="eyebrow">Who's in</div>
     <h2 id="plTitle" class="gold">Joined players</h2>
@@ -771,7 +778,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
   // resolves with the list of joined nicknames, or null when the list cannot be read
   function fetchNicknames() {
     if (!DUPLICATE_CHECK.csv && !DUPLICATE_CHECK.api) return Promise.resolve(null);
-    // Google can answer a first request with only the header row, so an empty list is asked for again (up to 3 more times)
+    // Google can answer a first request with only the header row, so an empty list is asked for again (once more)
     function clean(names) {
       var seen = {}, out = [];
       names.forEach(function (x) { var raw = String(x || "").trim(), k = norm(raw); if (k && !seen[k]) { seen[k] = 1; out.push(raw); } });
@@ -799,7 +806,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
     }
     function attempt(n) {
       return once().then(function (list) {
-        if (list.length || n >= 3) return list;
+        if (list.length || n >= 1) return list;
         return new Promise(function (res) { setTimeout(res, 700); }).then(function () { return attempt(n + 1); });
       });
     }
@@ -809,7 +816,8 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
   var slotsEl = $("slots"), playersSec = $("players"), formMsg = $("formMsg");
   function setFull(full) {
     form.querySelectorAll("input, button").forEach(function (el) { el.disabled = full; });
-    $("submitBtn").textContent = full ? "Registration full" : "Lock me in";
+    if (full) $("submitBtn").dataset.full = "1"; else delete $("submitBtn").dataset.full;
+    if (listReady || full) $("submitBtn").textContent = full ? "Registration full" : "Lock me in";
     formMsg.textContent = full ? "All " + MAX_PLAYERS + " spots are taken. Registration is closed." : "";
   }
   function renderPlayers() {
@@ -835,11 +843,42 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
     if (!done.classList.contains("show")) setFull(n >= MAX_PLAYERS);
   }
   // the published sheet is the one source of truth: a nickname that is not in it is not registered
+  /* ---------- first load: skeleton slots, and the submit button waits until the list is known ---------- */
+  var listReady = false, listConfigured = !!(DUPLICATE_CHECK.csv || DUPLICATE_CHECK.api);
+  function renderSkeleton() {
+    $("plCount").textContent = "--"; $("plCount").className = "sk"; $("plMax").textContent = String(MAX_PLAYERS);
+    $("plBar").style.transform = "scaleX(0)";
+    slotsEl.innerHTML = "";
+    for (var i = 0; i < MAX_PLAYERS; i++) {
+      var li = document.createElement("li"), num = document.createElement("span"), bar = document.createElement("b");
+      li.className = "sk"; num.textContent = String(i + 1).padStart(2, "0"); li.appendChild(num); li.appendChild(bar); slotsEl.appendChild(li);
+    }
+    slotsEl.setAttribute("aria-busy", "true");
+    $("plNote").textContent = "Loading players...";
+  }
+  function setBusy(busy) {
+    var b = $("submitBtn");
+    if (busy) { b.disabled = true; b.textContent = "Loading players..."; }
+    else if (!b.dataset.full) { b.disabled = false; b.textContent = "Lock me in"; }
+  }
+  function listDone(ok) {
+    listReady = true; $("plCount").className = ""; slotsEl.removeAttribute("aria-busy");
+    if (!ok && !playersKnown) {
+      slotsEl.innerHTML = "";
+      $("plCount").textContent = "?";
+      $("plNote").textContent = "Could not load the player list. Press the refresh button to try again.";
+    }
+    setBusy(false);
+  }
+  if (listConfigured) { renderSkeleton(); setBusy(true); }
+
   function loadPlayers() {
     var btn = $("plRefresh"); btn.classList.add("spin"); btn.disabled = true;
     var started = Date.now();
     return fetchNicknames().then(function (list) {
       if (list) { players = list; playersKnown = true; renderPlayers(); }
+      if (!listReady) listDone(!!list);
+      else if (!list && !playersKnown) listDone(false);
       setTimeout(function () { btn.classList.remove("spin"); btn.disabled = false; }, Math.max(0, 600 - (Date.now() - started)));
       return list;
     });
@@ -889,6 +928,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
 
   form.addEventListener("submit", function (e) {
     e.preventDefault();
+    if (listConfigured && !listReady) return;
     var d = validate(); if (!d) return;
     try { localStorage.setItem("bey-showdown-reg", JSON.stringify(d)); } catch (err) { /* storage unavailable */ }
     var btn = $("submitBtn"); btn.disabled = true; btn.textContent = "Checking...";
