@@ -598,6 +598,8 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
   window.addEventListener("pageshow", function (e) { if (e.persisted) toTop(); });
 
   var $ = function (id) { return document.getElementById(id); };
+  // Check-in closes at 6 PM Malaysia time (GMT+8); the tournament starts and registration closes with it
+  var CLOSE_AT = Date.parse("2026-11-08T18:00:00+08:00");
   var clamp = function (v, a, b) { return Math.max(a, Math.min(b, v)); };
   var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -751,7 +753,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
 
   /* ================= COUNTDOWN (Malaysia time, GMT+8, so it is the same for every visitor) ================= */
   (function () {
-    var OPEN = Date.parse("2026-11-08T17:00:00+08:00"), CLOSE = Date.parse("2026-11-08T18:00:00+08:00"), END = Date.parse("2026-11-08T20:00:00+08:00");
+    var OPEN = Date.parse("2026-11-08T17:00:00+08:00"), CLOSE = CLOSE_AT, END = Date.parse("2026-11-08T20:00:00+08:00");
     var box = $("countdown"), label = $("cdLabel"), note = $("cdNote");
     var d = $("cdD"), h = $("cdH"), m = $("cdM"), s = $("cdS");
     function pad(n) { return n < 10 ? "0" + n : String(n); }
@@ -894,9 +896,9 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
   }
 
   var slotsEl = $("slots"), playersSec = $("players"), formMsg = $("formMsg");
-  var submitting = false, sentNick = null, lastList = null;
+  var submitting = false, sentNick = null, lastList = null, registrationClosed = false;
   function setFull(full) {
-    if (submitting) return;
+    if (submitting || registrationClosed) return;
     form.querySelectorAll("input, button").forEach(function (el) { el.disabled = full; });
     if (full) $("submitBtn").dataset.full = "1"; else delete $("submitBtn").dataset.full;
     if (listReady || full) $("submitBtn").textContent = full ? "Registration full" : "Lock me in";
@@ -939,6 +941,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
     $("plNote").textContent = "Loading players...";
   }
   function setBusy(busy) {
+    if (registrationClosed) return;
     var b = $("submitBtn");
     if (busy) { b.disabled = true; b.textContent = "Loading players..."; }
     else if (!b.dataset.full) { b.disabled = false; b.textContent = "Lock me in"; }
@@ -988,6 +991,17 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
       });
     }, 3000);
   }
+
+  /* ---------- registration closes with check-in (6 PM Malaysia time) ---------- */
+  function checkClosed() {
+    if (registrationClosed || Date.now() < CLOSE_AT) return;
+    registrationClosed = true;
+    form.querySelectorAll("input, button").forEach(function (el) { el.disabled = true; });
+    $("submitBtn").textContent = "Registration closed";
+    formMsg.textContent = "Registration is closed. Check-in ended at 6 PM Malaysia time and the tournament has started.";
+    var intro = form.closest(".card").querySelector(":scope > p"); if (intro) intro.textContent = "Registration closed. Check-in was 5 PM to 6 PM.";
+  }
+  checkClosed(); setInterval(checkClosed, 1000);
 
   /* ---------- submitting: wait until the sheet really lists the nickname, then show the success card ---------- */
   function lockForm(on) {
@@ -1045,6 +1059,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
 
   form.addEventListener("submit", function (e) {
     e.preventDefault();
+    if (registrationClosed || Date.now() >= CLOSE_AT) { checkClosed(); return; }
     if (submitting) return;                                  // blocks double submit (button, Enter key, double tap)
     if (listConfigured && !listReady) return;
     var d = validate(); if (!d) return;
