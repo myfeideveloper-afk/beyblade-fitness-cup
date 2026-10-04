@@ -517,8 +517,10 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
      - it blocks a nickname that is already taken,
      - it closes registration when MAX_PLAYERS is reached.
      Publish only a tab that holds nicknames (File > Share > Publish to web > that tab > CSV), because that tab is public.
-     Leave csv empty to turn all of this off. */
-  var DUPLICATE_CHECK = { csv: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQSaS3lGVKPKNzhJlVASAbBmiAV6MobzBuDucLHq5iXOv8WFa5WQbzvvcz38ycGdRqbUJ0O4143aPTn/pub?gid=1631540710&single=true&output=csv" };
+     api (optional, recommended): the Web app link of apps-script/Players.gs. It reads the sheet live, so a new registration shows at once.
+     Without it the page uses the published csv, which Google can serve a little late.
+     Leave both empty to turn all of this off. */
+  var DUPLICATE_CHECK = { api: "", csv: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQSaS3lGVKPKNzhJlVASAbBmiAV6MobzBuDucLHq5iXOv8WFa5WQbzvvcz38ycGdRqbUJ0O4143aPTn/pub?gid=1631540710&single=true&output=csv" };
   var MAX_PLAYERS = 32;
 
   var GOOGLE_FORM = {
@@ -733,7 +735,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
       ? "Your registration was sent to the organiser. Bring " + ENTRY_FEE + " at most to pay on the spot. The fee will be reduced if fewer players join. See you at the stadium."
       : "Copy your details and send them to the organiser to confirm your spot.";
     $("doneTitle").textContent = sent ? "Registration successful" : "Almost there";
-    var js = $("joinStatus"); js.hidden = !(sent && DUPLICATE_CHECK.csv); js.className = "join-status"; js.textContent = "Checking your spot...";
+    var js = $("joinStatus"); js.hidden = !(sent && (DUPLICATE_CHECK.csv || DUPLICATE_CHECK.api)); js.className = "join-status"; js.textContent = "Checking your spot...";
     if (sent && !restored) { try { localStorage.setItem("bey-showdown-done", JSON.stringify(d)); } catch (e) { /* storage unavailable */ } }
     var card = form.closest(".card");
     function reveal() {
@@ -768,11 +770,19 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
   var players = [], playersKnown = false;
   // resolves with the list of joined nicknames, or null when the list cannot be read
   function fetchNicknames() {
-    if (!DUPLICATE_CHECK.csv) return Promise.resolve(null);
+    if (!DUPLICATE_CHECK.csv && !DUPLICATE_CHECK.api) return Promise.resolve(null);
     // Google can answer a first request with only the header row, so an empty list is asked for again (up to 3 more times)
     function once() {
-      var url = DUPLICATE_CHECK.csv + (DUPLICATE_CHECK.csv.indexOf("?") < 0 ? "?" : "&") + "nocache=" + Date.now() + "-" + Math.random().toString(36).slice(2, 10);
-      return fetch(url, { cache: "reload" }).then(function (r) { if (!r.ok) throw new Error("list unavailable"); return r.text(); }).then(function (text) {
+      if (DUPLICATE_CHECK.api) {
+        var au = DUPLICATE_CHECK.api + (DUPLICATE_CHECK.api.indexOf("?") < 0 ? "?" : "&") + "nocache=" + Date.now() + "-" + Math.random().toString(36).slice(2, 10);
+        return fetch(au, { cache: "reload" }).then(function (r) { if (!r.ok) throw new Error("list unavailable"); return r.json(); }).then(function (j) {
+          var seen = {}, out = [];
+          (j.nicknames || []).forEach(function (x) { var raw = String(x || "").trim(), k = norm(raw); if (k && !seen[k]) { seen[k] = 1; out.push(raw); } });
+          return out;
+        });
+      }
+      var url = DUPLICATE_CHECK.csv + (DUPLICATE_CHECK.csv.indexOf("?") < 0 ? "?" : "&") + "t=" + Date.now();
+      return fetch(url, { cache: "no-store" }).then(function (r) { if (!r.ok) throw new Error("list unavailable"); return r.text(); }).then(function (text) {
         var rows = parseCsv(text), head = (rows[0] || []).map(norm), ki = head.indexOf("nickname");
         if (ki < 0) ki = 0;
         var seen = {}, out = [];
@@ -796,7 +806,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
     formMsg.textContent = full ? "All " + MAX_PLAYERS + " spots are taken. Registration is closed." : "";
   }
   function renderPlayers() {
-    if (!DUPLICATE_CHECK.csv || !playersKnown) return;
+    if ((!DUPLICATE_CHECK.csv && !DUPLICATE_CHECK.api) || !playersKnown) return;
     playersSec.hidden = false;
     var n = Math.min(players.length, MAX_PLAYERS);
     $("plCount").textContent = String(n); $("plMax").textContent = String(MAX_PLAYERS);
@@ -839,14 +849,14 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
   // 3 seconds after a registration is sent, reload the list and tell the player whether they are on it (a few more tries if not yet)
   function confirmJoin(d) {
     var st = $("joinStatus"), k = norm(d.nickname);
-    if (!DUPLICATE_CHECK.csv) { st.hidden = true; return; }
+    if (!DUPLICATE_CHECK.csv && !DUPLICATE_CHECK.api) { st.hidden = true; return; }
     setTimeout(function () {
       fetchNicknames().then(function (list) {
         if (!list) { st.className = "join-status warn"; st.textContent = "Could not load the player list. Use the refresh button on the list to check."; return; }
         players = list; playersKnown = true; renderPlayers();
         var at = list.findIndex(function (x) { return norm(x) === k; });
         if (at >= 0) { st.className = "join-status ok"; st.textContent = "You are on the player list: spot " + (at + 1) + " of " + MAX_PLAYERS + "."; }
-        else { st.className = "join-status warn"; st.textContent = "You are not on the player list. Use the refresh button on the list to check again."; }
+        else { st.className = "join-status warn"; st.textContent = DUPLICATE_CHECK.api ? "You are not on the player list. Use the refresh button on the list to check again." : "Your registration was sent, but the list can take a little while to update. Use the refresh button on the list to check again."; }
       });
     }, 3000);
   }
