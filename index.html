@@ -59,7 +59,7 @@ a { color: var(--gold); }
 
 /* ---------- Shared type ---------- */
 .eyebrow { font: 700 clamp(13px, 2.2vw, 16px)/1 var(--f-cond); letter-spacing: .42em; text-transform: uppercase; color: var(--gold-hi); }
-.gold { background: var(--gold-grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.gold { background: var(--gold-grad); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; }
 .spark { display: inline-block; width: .5em; height: .5em; vertical-align: middle; }
 .spark svg { width: 100%; height: 100%; display: block; fill: var(--gold-hi); filter: drop-shadow(0 0 10px rgba(255, 224, 140, .9)); }
 
@@ -68,13 +68,12 @@ a { color: var(--gold); }
 @media (max-width: 700px) { .track { height: 220vh; } }
 .stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; }
 .title { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; padding-inline: 16px; gap: 20px; pointer-events: none; will-change: transform, opacity; }
+.logo { position: relative; justify-self: center; max-width: 100%; font-size: clamp(40px, 11.5vw, 170px); filter: drop-shadow(0 6px 30px rgba(0, 0, 0, .55)); }
 .title h1 {
-  margin: 0; font: 800 clamp(46px, 12.5vw, 170px)/.92 var(--f-serif); letter-spacing: .03em; text-transform: uppercase;
-  background: var(--gold-grad); -webkit-background-clip: text; background-clip: text; color: transparent;
-  filter: drop-shadow(0 6px 30px rgba(0, 0, 0, .55)); text-wrap: balance;
+  margin: 0; font: 800 1em/.92 var(--f-serif); letter-spacing: .03em; text-transform: uppercase;
+  background: var(--gold-grad); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent;
 }
-.title h1 .last { position: relative; display: inline-block; }
-.title h1 .spark { position: absolute; right: -.18em; top: -.12em; width: .42em; height: .42em; }
+.logo .spark { position: absolute; right: -.02em; top: .6em; width: .36em; height: .36em; }
 .sub { font: 600 clamp(16px, 2.6vw, 22px)/1.3 var(--f-cond); letter-spacing: .3em; text-transform: uppercase; color: var(--text); text-shadow: 0 2px 16px rgba(0,0,0,.8); }
 
 
@@ -141,7 +140,8 @@ html.locked, html.locked body { overflow: hidden; overscroll-behavior: none; }
 .t-date { padding: 30px; border-right: 1px dashed var(--line); display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .k { font: 700 13px/1 var(--f-cond); letter-spacing: .3em; text-transform: uppercase; color: var(--muted); }
 .big { font: 800 clamp(56px, 11vw, 100px)/.9 var(--f-serif); text-transform: uppercase; }
-.big small { display: block; margin-top: 8px; font: 700 clamp(15px, 2.6vw, 20px)/1 var(--f-cond); letter-spacing: .34em; color: var(--text); -webkit-text-fill-color: var(--text); }
+.big .gold { display: block; }
+.big small { display: block; margin-top: 8px; font: 700 clamp(15px, 2.6vw, 20px)/1 var(--f-cond); letter-spacing: .34em; color: var(--text); }
 .t-time { font: 700 clamp(24px, 4.4vw, 32px)/1.1 var(--f-cond); letter-spacing: .08em; text-transform: uppercase; margin-top: 12px; }
 .t-time em { font-style: normal; color: var(--green); }
 .t-rest { padding: 30px; display: flex; flex-direction: column; gap: 24px; justify-content: center; min-width: 0; }
@@ -165,7 +165,13 @@ html.locked, html.locked body { overflow: hidden; overscroll-behavior: none; }
 .slots li span { font-variant-numeric: tabular-nums; font-size: 12px; letter-spacing: .1em; opacity: .8; }
 .slots li b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .slots li.on { border: 1px solid var(--line); background: rgba(217, 180, 90, .08); color: var(--text); }
+.slots li.on b { text-transform: none; letter-spacing: .02em; font-size: 17px; }
 .slots li.on span { color: var(--gold); }
+.fee { display: grid; gap: 6px; padding: 16px 18px; border: 1px solid var(--line); background: rgba(217, 180, 90, .07); }
+.fee p { margin: 0; }
+.fee-amt { font: 700 20px/1.2 var(--f-cond); letter-spacing: .08em; text-transform: uppercase; color: var(--text); }
+.fee-amt b { font: 800 30px/1 var(--f-serif); color: var(--gold-hi); letter-spacing: .02em; margin-right: 6px; }
+[hidden] { display: none !important; }
 .register { padding-inline: 16px; padding-block: 24px clamp(64px, 12vh, 120px); background: rgba(5, 7, 15, .9); }
 .card { background: var(--panel); border: 1px solid var(--line); backdrop-filter: blur(10px); padding: clamp(22px, 5vw, 42px); position: relative; }
 .card::before { content: ""; position: absolute; inset: 6px; border: 1px solid rgba(217,180,90,.14); pointer-events: none; }
@@ -284,7 +290,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
   <div class="stage">
     <div class="title" id="title">
       <div class="eyebrow">Friends only &middot; 8 Nov 2026</div>
-      <h1>Bey<br>Show<span class="last">down<span class="spark"><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 0 C53 30 70 47 100 50 C70 53 53 70 50 100 C47 70 30 53 0 50 C30 47 47 30 50 0Z"/></svg></span></span></h1>
+      <div class="logo"><h1>Bey<br>Showdown</h1><span class="spark"><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 0 C53 30 70 47 100 50 C70 53 53 70 50 100 C47 70 30 53 0 50 C30 47 47 30 50 0Z"/></svg></span></div>
       <div class="sub">A beyblade tournament for friends</div>
     </div>
 
@@ -318,10 +324,14 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
     <div class="ticket">
       <div class="t-date">
         <span class="k">Date</span>
-        <div class="big gold">8 Nov<small>Sunday 2026</small></div>
+        <div class="big"><span class="gold">8 Nov</span><small>Sunday 2026</small></div>
         <div class="t-time">5 PM <em>to</em> 8 PM</div>
       </div>
       <div class="t-rest">
+        <div>
+          <span class="k">Entry fee</span>
+          <p><span class="price">RM15</span> per player, paid on the spot at the event.</p>
+        </div>
         <div>
           <span class="k">On the house</span>
           <p><strong>Snacks and drinks</strong> are prepared for everyone.</p>
@@ -335,6 +345,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
 
     <ul class="rules">
       <li>Invited friends only. Please don't forward this page.</li>
+      <li>Each player pays RM15 on the spot. There are 32 spots.</li>
       <li>Your nickname becomes your blader name on the bracket.</li>
     </ul>
   </div>
@@ -387,6 +398,12 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
           <p class="err" id="err-phone" role="alert"></p>
         </div>
 
+        <div class="fee">
+          <span class="k">Entry fee</span>
+          <p class="fee-amt"><b>RM15</b> per player</p>
+          <p class="help">Pay on the spot at the event. Nothing to pay now.</p>
+        </div>
+
         <p class="err" id="formMsg" role="alert"></p>
         <button class="go-btn" id="submitBtn" type="submit">Lock me in</button>
       </form>
@@ -434,6 +451,8 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
         The link looks like .../d/e/FORM_ID/viewform?usp=pp_url&entry.111=a&entry.222=b ...
      3. Copy FORM_ID into action (below) and each entry.NNN number into the matching field.
      The form must not require sign-in and must be accepting responses. */
+  var ENTRY_FEE = "RM15";   // shown on the page; paid on the spot
+
   /* Joined players and nickname check. The page reads the published "nickname" column of your response sheet:
      - it shows who has joined (nicknames only),
      - it blocks a nickname that is already taken,
@@ -649,12 +668,12 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
   }
 
   function showDone(d, sent) {
-    lastSummary = "Bey Showdown, 8 Nov 2026, 5-8 PM\nName: " + d.name + "\nNickname: " + d.nickname + "\nContact: " + d.phone;
+    lastSummary = "Bey Showdown, 8 Nov 2026, 5-8 PM\nName: " + d.name + "\nNickname: " + d.nickname + "\nContact: " + d.phone + "\nEntry fee: " + ENTRY_FEE + " (pay on the spot)";
     $("doneNick").textContent = d.nickname;
     $("doneText").textContent = lastSummary.split("\n").slice(1).join("\n");
     $("doneEyebrow").textContent = sent ? "Blader locked in" : "One more step";
     $("doneNote").textContent = sent
-      ? "Your registration was sent to the organiser. See you at the dish."
+      ? "Your registration was sent to the organiser. Bring " + ENTRY_FEE + " to pay on the spot. See you at the dish."
       : "Copy your details and send them to the organiser to confirm your spot.";
     $("doneTitle").textContent = sent ? "Registration successful" : "Almost there";
     var card = form.closest(".card");
