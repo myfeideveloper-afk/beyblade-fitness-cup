@@ -153,6 +153,19 @@ html.locked, html.locked body { overflow: hidden; overscroll-behavior: none; }
 .rules li::before { content: ""; flex: none; width: 9px; height: 9px; background: var(--gold); transform: rotate(45deg); }
 
 /* ---------- Register ---------- */
+.players { padding-inline: 16px; padding-block: 8px clamp(36px, 7vh, 80px); background: rgba(5, 7, 15, .86); }
+.players[hidden] { display: none; }
+.players h2 { margin: 12px 0 10px; font: 800 clamp(30px, 6vw, 52px)/1 var(--f-serif); text-transform: uppercase; letter-spacing: .03em; }
+.plcount { margin: 0 0 12px; font: 700 18px/1 var(--f-cond); letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
+.plcount b { color: var(--gold-hi); font-size: 26px; font-variant-numeric: tabular-nums; }
+.bar { height: 4px; background: rgba(255, 255, 255, .12); margin-bottom: 18px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--gold-grad); transform-origin: left; transform: scaleX(0); transition: transform .8s ease; }
+.slots { list-style: none; margin: 0 0 12px; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.slots li { display: flex; align-items: baseline; gap: 10px; padding: 11px 12px; min-width: 0; border: 1px dashed rgba(152, 163, 192, .3); color: #55617f; font: 600 15px/1.2 var(--f-cond); letter-spacing: .08em; text-transform: uppercase; }
+.slots li span { font-variant-numeric: tabular-nums; font-size: 12px; letter-spacing: .1em; opacity: .8; }
+.slots li b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.slots li.on { border: 1px solid var(--line); background: rgba(217, 180, 90, .08); color: var(--text); }
+.slots li.on span { color: var(--gold); }
 .register { padding-inline: 16px; padding-block: 24px clamp(64px, 12vh, 120px); background: rgba(5, 7, 15, .9); }
 .card { background: var(--panel); border: 1px solid var(--line); backdrop-filter: blur(10px); padding: clamp(22px, 5vw, 42px); position: relative; }
 .card::before { content: ""; position: absolute; inset: 6px; border: 1px solid rgba(217,180,90,.14); pointer-events: none; }
@@ -166,18 +179,7 @@ input::placeholder { color: #5a6685; }
 input:focus-visible { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(217,180,90,.25); }
 .help { margin: 0; font-size: 14px; color: var(--muted); }
 .err { margin: 0; font-size: 14px; color: #ff8a9a; }
-.invalid input, .invalid .seg { border-color: #ff8a9a; }
-fieldset { border: 0; margin: 0; padding: 0; min-width: 0; display: grid; gap: 8px; }
-legend { margin-bottom: 10px; }
-.seg { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--line); border-radius: 2px; overflow: hidden; background: rgba(5, 7, 15, .75); }
-.seg input { position: absolute; opacity: 0; pointer-events: none; }
-.seg label { display: grid; gap: 4px; place-items: center; text-align: center; padding: 16px 10px; cursor: pointer; font: 700 19px/1 var(--f-cond); letter-spacing: .16em; color: var(--muted); transition: background .2s, color .2s; }
-.seg label small { font: 500 13px/1.2 var(--f-body); letter-spacing: 0; text-transform: none; }
-.seg input + label + input + label { border-left: 1px solid var(--line); }
-.seg label:hover { color: var(--text); background: rgba(217, 180, 90, .08); }
-.seg input:checked + label { background: var(--gold-grad); color: #231600; box-shadow: inset 0 0 0 1px rgba(255, 240, 184, .55), 0 0 24px rgba(217, 180, 90, .25); }
-.seg input:checked + label small { color: #3a2a08; font-weight: 600; }
-.seg input:focus-visible + label { outline: 3px solid var(--gold-hi); outline-offset: -3px; }
+.invalid input { border-color: #ff8a9a; }
 .go-btn { font: 800 20px/1 var(--f-serif); text-transform: uppercase; letter-spacing: .06em; color: #231600; background: var(--gold-grad); border: 0; border-radius: 2px; padding: 20px 24px; cursor: pointer; transition: transform .15s, filter .15s; box-shadow: 0 0 30px rgba(217,180,90,.25); }
 .go-btn:hover { transform: translateY(-2px); filter: brightness(1.08); }
 .go-btn:active { transform: translateY(1px); }
@@ -325,8 +327,8 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
           <p><strong>Snacks and drinks</strong> are prepared for everyone.</p>
         </div>
         <div>
-          <span class="k">Dinner (optional)</span>
-          <p>Bring your own, or add <span class="price">RM10</span> and the organiser sorts it out for you.</p>
+          <span class="k">Dinner</span>
+          <p>Dinner is <strong>not provided</strong>. Eat before you come, bring takeaway food, or have dinner after the game.</p>
         </div>
       </div>
     </div>
@@ -335,6 +337,18 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
       <li>Invited friends only. Please don't forward this page.</li>
       <li>Your nickname becomes your blader name on the bracket.</li>
     </ul>
+  </div>
+</section>
+
+<!-- ======== JOINED PLAYERS ======== -->
+<section class="players" id="players" aria-labelledby="plTitle" hidden>
+  <div class="wrap">
+    <div class="eyebrow">Who's in</div>
+    <h2 id="plTitle" class="gold">Joined players</h2>
+    <p class="plcount"><b id="plCount">0</b> / <span id="plMax">32</span> spots taken</p>
+    <div class="bar" aria-hidden="true"><i id="plBar"></i></div>
+    <ol class="slots" id="slots"></ol>
+    <p class="help" id="plNote"></p>
   </div>
 </section>
 
@@ -363,7 +377,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
         <div class="field" data-f="nick">
           <label for="nick">Nickname</label>
           <input id="nick" name="nick" type="text" autocomplete="nickname" placeholder="e.g. Storm Pegasus" maxlength="24">
-          <p class="help">This is your blader name on the leaderboard.</p>
+          <p class="help">This is your blader name on the leaderboard. Each nickname can only be used once.</p>
           <p class="err" id="err-nick" role="alert"></p>
         </div>
 
@@ -373,17 +387,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
           <p class="err" id="err-phone" role="alert"></p>
         </div>
 
-        <fieldset data-f="dinner">
-          <legend>Dinner by organiser</legend>
-          <div class="seg">
-            <input type="radio" name="dinner" id="dinYes" value="Yes">
-            <label for="dinYes">YES<small>RM10, organiser arranges</small></label>
-            <input type="radio" name="dinner" id="dinNo" value="No">
-            <label for="dinNo">NO<small>I'll bring my own</small></label>
-          </div>
-          <p class="err" id="err-dinner" role="alert"></p>
-        </fieldset>
-
+        <p class="err" id="formMsg" role="alert"></p>
         <button class="go-btn" id="submitBtn" type="submit">Lock me in</button>
       </form>
 
@@ -425,16 +429,23 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
   var FORM_ENDPOINT = "";
 
   /* Option B: send registrations into a Google Form (answers land in its Responses sheet).
-     1. In the form, make 4 questions: Name (short answer), Nickname (short answer), Contact number (short answer),
-        Dinner by organiser (multiple choice with two options, written exactly as in dinnerLabels below).
+     1. In the form, make 3 questions: Name (short answer), Nickname (short answer), Contact number (short answer).
      2. Form menu (three dots) > "Get pre-filled link", type a sample answer in every question, press "Get link".
         The link looks like .../d/e/FORM_ID/viewform?usp=pp_url&entry.111=a&entry.222=b ...
      3. Copy FORM_ID into action (below) and each entry.NNN number into the matching field.
      The form must not require sign-in and must be accepting responses. */
+  /* Joined players and nickname check. The page reads the published "nickname" column of your response sheet:
+     - it shows who has joined (nicknames only),
+     - it blocks a nickname that is already taken,
+     - it closes registration when MAX_PLAYERS is reached.
+     Publish only a tab that holds nicknames (File > Share > Publish to web > that tab > CSV), because that tab is public.
+     Leave csv empty to turn all of this off. */
+  var DUPLICATE_CHECK = { csv: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQSaS3lGVKPKNzhJlVASAbBmiAV6MobzBuDucLHq5iXOv8WFa5WQbzvvcz38ycGdRqbUJ0O4143aPTn/pub?gid=1631540710&single=true&output=csv" };
+  var MAX_PLAYERS = 32;
+
   var GOOGLE_FORM = {
     action: "https://docs.google.com/forms/d/e/1FAIpQLScnRhgmkLTpdPq5e63EgpM4_YanAIEvo1zq4EJceDIdyCRyuA/formResponse",
-    fields: { name: "entry.2052856706", nickname: "entry.1340230335", phone: "entry.1161564355", dinner: "entry.1276046545" },
-    dinnerLabels: { Yes: "Yes", No: "No" }   // the exact option text in your Google Form
+    fields: { name: "entry.2052856706", nickname: "entry.1340230335", phone: "entry.1161564355" }
   };
 
   /* Optional: a video file you host yourself, e.g. "assets/bg.mp4". It replaces the YouTube embed,
@@ -613,18 +624,15 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
     var ok = true, first = null;
     var name = $("name").value.trim(), nick = $("nick").value.trim(), phone = $("phone").value.trim();
     var digits = phone.replace(/\D/g, "");
-    var dinner = form.querySelector('input[name="dinner"]:checked');
     function bad(f, m, el) { setErr(f, m); ok = false; if (!first) first = el; }
-    setErr("name"); setErr("nick"); setErr("phone"); setErr("dinner");
+    setErr("name"); setErr("nick"); setErr("phone");
     if (name.length < 2) bad("name", "Enter your name.", $("name"));
     if (nick.length < 2) bad("nick", "Pick a blader nickname (at least 2 characters).", $("nick"));
     if (!/^[+\d][\d\s\-()]*$/.test(phone) || digits.length < 8 || digits.length > 15) bad("phone", "Enter a valid contact number, for example 012-345 6789.", $("phone"));
-    if (!dinner) bad("dinner", "Choose Yes or No for dinner.", $("dinYes"));
     if (first) first.focus();
-    return ok ? { name: name, nickname: nick, phone: phone, dinner: dinner.value } : null;
+    return ok ? { name: name, nickname: nick, phone: phone } : null;
   }
   ["name", "nick", "phone"].forEach(function (f) { $(f).addEventListener("input", function () { setErr(f); }); });
-  form.querySelectorAll('input[name="dinner"]').forEach(function (r) { r.addEventListener("change", function () { setErr("dinner"); }); });
 
   // two blades fly in over the form, smash together (flash, shock rings, sparks), then fade out
   function playSmash(card) {
@@ -641,7 +649,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
   }
 
   function showDone(d, sent) {
-    lastSummary = "Bey Showdown, 8 Nov 2026, 5-8 PM\nName: " + d.name + "\nNickname: " + d.nickname + "\nContact: " + d.phone + "\nDinner by organiser: " + d.dinner + (d.dinner === "Yes" ? " (RM10)" : "");
+    lastSummary = "Bey Showdown, 8 Nov 2026, 5-8 PM\nName: " + d.name + "\nNickname: " + d.nickname + "\nContact: " + d.phone;
     $("doneNick").textContent = d.nickname;
     $("doneText").textContent = lastSummary.split("\n").slice(1).join("\n");
     $("doneEyebrow").textContent = sent ? "Blader locked in" : "One more step";
@@ -659,26 +667,100 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
     else reveal();
   }
 
-  form.addEventListener("submit", function (e) {
-    e.preventDefault();
-    var d = validate(); if (!d) return;
-    try { localStorage.setItem("bey-showdown-reg", JSON.stringify(d)); } catch (err) { /* storage unavailable */ }
-    var gf = GOOGLE_FORM, useGoogle = !!(gf.action && gf.fields.name && gf.fields.nickname && gf.fields.phone && gf.fields.dinner);
-    if (!useGoogle && !FORM_ENDPOINT) { showDone(d, false); return; }
-    var btn = $("submitBtn"); btn.disabled = true; btn.textContent = "Sending...";
+  /* ---------- joined players + nickname check ---------- */
+  function norm(s) { return String(s || "").toLowerCase().normalize("NFKD").replace(/[^a-z0-9\u0080-\uffff]/g, ""); }
+  function parseCsv(text) {
+    var rows = [], row = [], cell = "", q = false;
+    for (var i = 0; i < text.length; i++) {
+      var c = text[i];
+      if (q) { if (c === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; } else cell += c; }
+      else if (c === '"') q = true;
+      else if (c === ",") { row.push(cell); cell = ""; }
+      else if (c === "\n") { row.push(cell); rows.push(row); row = []; cell = ""; }
+      else if (c !== "\r") cell += c;
+    }
+    row.push(cell); rows.push(row); return rows;
+  }
+  function savedNicks() { try { return JSON.parse(localStorage.getItem("bey-showdown-nicks") || "[]"); } catch (e) { return []; } }
+  function rememberNick(nick) { try { var l = savedNicks(); l.push(norm(nick)); localStorage.setItem("bey-showdown-nicks", JSON.stringify(l)); } catch (e) { /* storage unavailable */ } }
+
+  var players = [], playersKnown = false;
+  // resolves with the list of joined nicknames, or null when the list cannot be read
+  function fetchNicknames() {
+    if (!DUPLICATE_CHECK.csv) return Promise.resolve(null);
+    var url = DUPLICATE_CHECK.csv + (DUPLICATE_CHECK.csv.indexOf("?") < 0 ? "?" : "&") + "t=" + Date.now();
+    return fetch(url, { cache: "no-store" }).then(function (r) { if (!r.ok) throw new Error("list unavailable"); return r.text(); }).then(function (text) {
+      var rows = parseCsv(text), head = (rows[0] || []).map(norm), ki = head.indexOf("nickname");
+      if (ki < 0) ki = 0;
+      var seen = {}, out = [];
+      rows.slice(1).forEach(function (r) { var raw = String(r[ki] || "").trim(), k = norm(raw); if (k && !seen[k]) { seen[k] = 1; out.push(raw); } });
+      return out;
+    }).catch(function () { return null; });
+  }
+
+  var slotsEl = $("slots"), playersSec = $("players"), formMsg = $("formMsg");
+  function setFull(full) {
+    form.querySelectorAll("input, button").forEach(function (el) { el.disabled = full; });
+    $("submitBtn").textContent = full ? "Registration full" : "Lock me in";
+    formMsg.textContent = full ? "All " + MAX_PLAYERS + " spots are taken. Registration is closed." : "";
+  }
+  function renderPlayers() {
+    if (!DUPLICATE_CHECK.csv || !playersKnown) return;
+    playersSec.hidden = false;
+    var n = Math.min(players.length, MAX_PLAYERS);
+    $("plCount").textContent = String(n); $("plMax").textContent = String(MAX_PLAYERS);
+    $("plBar").style.transform = "scaleX(" + (n / MAX_PLAYERS) + ")";
+    slotsEl.innerHTML = "";
+    for (var i = 0; i < MAX_PLAYERS; i++) {
+      var li = document.createElement("li"), num = document.createElement("span"), nm = document.createElement("b");
+      num.textContent = String(i + 1).padStart(2, "0"); li.appendChild(num);
+      if (i < players.length) { li.className = "on"; nm.textContent = players[i]; } else { nm.textContent = "Open"; }
+      li.appendChild(nm); slotsEl.appendChild(li);
+    }
+    $("plNote").textContent = n >= MAX_PLAYERS ? "All spots are taken." : (MAX_PLAYERS - n) + " spot" + (MAX_PLAYERS - n === 1 ? "" : "s") + " left.";
+    if (!done.classList.contains("show")) setFull(n >= MAX_PLAYERS);
+  }
+  function loadPlayers() {
+    fetchNicknames().then(function (list) { if (list) { players = list; playersKnown = true; renderPlayers(); } });
+  }
+  loadPlayers();
+  setInterval(function () { if (!document.hidden) loadPlayers(); }, 60000);
+
+  function send(d) {
+    var gf = GOOGLE_FORM, useGoogle = !!(gf.action && gf.fields.name && gf.fields.nickname && gf.fields.phone);
+    var btn = $("submitBtn");
+    if (!useGoogle && !FORM_ENDPOINT) { btn.disabled = false; btn.textContent = "Lock me in"; showDone(d, false); return; }
+    btn.textContent = "Sending...";
     var req;
     if (useGoogle) {
       var body = new URLSearchParams();
       body.set(gf.fields.name, d.name); body.set(gf.fields.nickname, d.nickname); body.set(gf.fields.phone, d.phone);
-      body.set(gf.fields.dinner, (gf.dinnerLabels && gf.dinnerLabels[d.dinner]) || d.dinner);
       req = fetch(gf.action, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: body.toString() });
     } else {
       req = fetch(FORM_ENDPOINT, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(d) });
     }
     req
-      .then(function () { showDone(d, true); })
+      .then(function () { rememberNick(d.nickname); if (playersKnown) { players.push(d.nickname); renderPlayers(); } showDone(d, true); })
       .catch(function () { showDone(d, false); })
       .finally(function () { btn.disabled = false; btn.textContent = "Lock me in"; });
+  }
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var d = validate(); if (!d) return;
+    try { localStorage.setItem("bey-showdown-reg", JSON.stringify(d)); } catch (err) { /* storage unavailable */ }
+    var btn = $("submitBtn"); btn.disabled = true; btn.textContent = "Checking...";
+    fetchNicknames().then(function (list) {
+      var k = norm(d.nickname);
+      var taken = savedNicks().indexOf(k) >= 0 || (list || []).some(function (x) { return norm(x) === k; });
+      if (list) { players = list; playersKnown = true; renderPlayers(); }
+      if (list && list.length >= MAX_PLAYERS) { btn.disabled = false; return; }
+      if (taken) {
+        setErr("nick", "This nickname is already taken. Pick another blader name.");
+        btn.disabled = false; btn.textContent = "Lock me in"; $("nick").focus(); return;
+      }
+      send(d);
+    });
   });
 
   $("copyBtn").addEventListener("click", function () {
@@ -692,7 +774,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
     else fallback();
   });
   $("againBtn").addEventListener("click", function () {
-    form.reset(); ["name", "nick", "phone", "dinner"].forEach(function (f) { setErr(f); });
+    form.reset(); ["name", "nick", "phone"].forEach(function (f) { setErr(f); });
     done.classList.remove("show"); form.style.display = "grid"; $("name").focus({ preventScroll: true });
   });
 })();
