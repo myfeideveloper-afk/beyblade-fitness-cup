@@ -775,7 +775,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
     function once() {
       if (DUPLICATE_CHECK.api) {
         var au = DUPLICATE_CHECK.api + (DUPLICATE_CHECK.api.indexOf("?") < 0 ? "?" : "&") + "nocache=" + Date.now() + "-" + Math.random().toString(36).slice(2, 10);
-        return fetch(au, { cache: "reload" }).then(function (r) { if (!r.ok) throw new Error("list unavailable"); return r.json(); }).then(function (j) {
+        return fetch(au).then(function (r) { if (!r.ok) throw new Error("list unavailable"); return r.json(); }).then(function (j) {
           var seen = {}, out = [];
           (j.nicknames || []).forEach(function (x) { var raw = String(x || "").trim(), k = norm(raw); if (k && !seen[k]) { seen[k] = 1; out.push(raw); } });
           return out;

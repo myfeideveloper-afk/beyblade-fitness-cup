@@ -16,9 +16,11 @@
  * About the permission screen: the script has to open your sheet to read it, so Google asks YOU (the owner) once.
  * Because it is your own unverified script, Google shows "Google hasn't verified this app": press Advanced, then
  * "Go to <project name> (unsafe)", then Allow. Your visitors are never asked for anything.
- * To limit it to read-only access: in Apps Script open Project Settings, tick "Show appsscript.json manifest file in editor",
- * open appsscript.json and add this line before the last closing brace (mind the comma on the line above):
- *   "oauthScopes": ["https://www.googleapis.com/auth/spreadsheets.readonly"]
+ * Permission: the script is limited to this one spreadsheet ("@OnlyCurrentDoc" below). Google cannot give a script
+ * read-only access with SpreadsheetApp.getActiveSpreadsheet, so do NOT add a "spreadsheets.readonly" scope: it makes the
+ * web app fail. If you added one to appsscript.json, set it to this (or delete the oauthScopes line):
+ *   "oauthScopes": ["https://www.googleapis.com/auth/spreadsheets.currentonly"]
+ * The code below only reads; it never writes or deletes.
  *
  * It only returns nicknames (no names, no other columns). If you change this file later,
  * use Deploy > Manage deployments > Edit > New version.
