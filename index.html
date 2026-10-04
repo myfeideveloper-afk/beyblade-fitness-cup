@@ -166,6 +166,7 @@ html.locked, html.locked body { overflow: hidden; overscroll-behavior: none; }
 
 /* ---------- Register ---------- */
 .t-venue { display: grid; gap: 6px; margin-top: 18px; }
+.t-venue .cin { color: var(--muted); font-size: 14px; }
 .t-venue b { font: 700 clamp(18px, 3.2vw, 24px)/1.15 var(--f-cond); letter-spacing: .06em; text-transform: uppercase; color: var(--gold-hi); }
 .location { padding-inline: 16px; padding-block: 8px clamp(36px, 7vh, 80px); background: rgba(5, 7, 15, .86); }
 .loc-grid { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: clamp(20px, 5vw, 48px); align-items: center; }
@@ -400,6 +401,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
         <span class="k">Date</span>
         <div class="big"><span class="gold">8 Nov</span><small>Sunday 2026</small></div>
         <div class="t-time">5 PM <em>to</em> 8 PM</div>
+        <div class="t-venue"><span class="k">Check-in</span><b>5 PM to 6 PM</b><span class="cin">No more entry after 6 PM. The tournament starts then.</span></div>
         <div class="t-venue"><span class="k">Venue</span><b>Alira @ Tropicana Metropark</b></div>
       </div>
       <div class="t-rest">
@@ -420,6 +422,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
 
     <ul class="rules">
       <li>Invited friends only. Please don't forward this page.</li>
+      <li>Check-in is 5 PM to 6 PM. There is no more entry after that, because the tournament has started.</li>
       <li>RM15 is the maximum entry fee. If fewer players join, the fee will be reduced. Paid on the spot. There are 32 spots.</li>
       <li>Your nickname becomes your blader name on the bracket.</li>
     </ul>
@@ -748,19 +751,26 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
 
   /* ================= COUNTDOWN (Malaysia time, GMT+8, so it is the same for every visitor) ================= */
   (function () {
-    var START = Date.parse("2026-11-08T17:00:00+08:00"), END = Date.parse("2026-11-08T20:00:00+08:00");
+    var OPEN = Date.parse("2026-11-08T17:00:00+08:00"), CLOSE = Date.parse("2026-11-08T18:00:00+08:00"), END = Date.parse("2026-11-08T20:00:00+08:00");
     var box = $("countdown"), label = $("cdLabel"), note = $("cdNote");
     var d = $("cdD"), h = $("cdH"), m = $("cdM"), s = $("cdS");
     function pad(n) { return n < 10 ? "0" + n : String(n); }
+    function show(left) {
+      var sec = Math.floor(left / 1000);
+      d.textContent = String(Math.floor(sec / 86400)); h.textContent = pad(Math.floor(sec % 86400 / 3600));
+      m.textContent = pad(Math.floor(sec % 3600 / 60)); s.textContent = pad(sec % 60);
+    }
     function tick() {
-      var now = Date.now(), left = START - now;
-      if (left > 0) {
-        var sec = Math.floor(left / 1000);
-        d.textContent = String(Math.floor(sec / 86400)); h.textContent = pad(Math.floor(sec % 86400 / 3600));
-        m.textContent = pad(Math.floor(sec % 3600 / 60)); s.textContent = pad(sec % 60);
-        box.className = "countdown"; label.textContent = "Starts in";
+      var now = Date.now();
+      if (now < OPEN) {
+        show(OPEN - now); box.className = "countdown"; label.textContent = "Check-in opens in";
+        note.textContent = "Check-in is 5 PM to 6 PM on 8 Nov 2026, Malaysia time (GMT+8). The tournament starts after check-in.";
+      } else if (now < CLOSE) {
+        show(CLOSE - now); box.className = "countdown"; label.textContent = "Check-in is open. It closes in";
+        note.textContent = "Please arrive before 6 PM. There is no more entry after check-in closes.";
       } else if (now < END) {
-        box.className = "countdown live"; label.textContent = "The tournament is on now"; note.textContent = "Until 8 PM Malaysia time. Come on down!";
+        box.className = "countdown live"; label.textContent = "Check-in is closed. The tournament has started";
+        note.textContent = "No more entry. The tournament runs until 8 PM Malaysia time.";
       } else {
         box.className = "countdown over"; label.textContent = "The tournament has ended"; note.textContent = "Thanks for playing. See you next time.";
       }
@@ -809,7 +819,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
     $("doneText").textContent = lastSummary.split("\n").slice(1).join("\n");
     $("doneEyebrow").textContent = sent ? "Blader locked in" : "One more step";
     $("doneNote").textContent = sent
-      ? "Your registration was sent to the organiser. Bring " + ENTRY_FEE + " at most to pay on the spot. The fee will be reduced if fewer players join. See you at the stadium."
+      ? "Your registration was sent to the organiser. Check in between 5 PM and 6 PM. Bring " + ENTRY_FEE + " at most to pay on the spot. The fee will be reduced if fewer players join. See you at the stadium."
       : "Copy your details and send them to the organiser to confirm your spot.";
     $("doneTitle").textContent = sent ? "Registration successful" : "Almost there";
     var js = $("joinStatus"); js.hidden = !(sent && (DUPLICATE_CHECK.csv || DUPLICATE_CHECK.api)); js.className = "join-status"; js.textContent = "Checking your spot...";
