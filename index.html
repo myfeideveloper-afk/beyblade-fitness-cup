@@ -475,8 +475,6 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
           <pre id="doneText"></pre>
         </div>
         <p class="help" id="doneNote"></p>
-        <button class="ghost" id="copyBtn" type="button">Copy my details</button>
-        <button class="ghost" id="againBtn" type="button">Register another blader</button>
         </div>
       </div>
     </div>
@@ -723,7 +721,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
   }
 
   function showDone(d, sent) {
-    lastSummary = "Beyblade Fitness Cup, 8 Nov 2026, 5-8 PM\nName: " + d.name + "\nNickname: " + d.nickname + "\nEntry fee: " + ENTRY_FEE + " (pay on the spot)";
+    lastSummary = "Beyblade Fitness Cup, 8 Nov 2026, 5-8 PM\nName: " + d.name + "\nNickname: " + d.nickname + "\nEntry fee: up to " + ENTRY_FEE + ", paid on the spot. It depends on the number of players and will be reduced if fewer join.";
     $("doneNick").textContent = d.nickname;
     $("doneText").textContent = lastSummary.split("\n").slice(1).join("\n");
     $("doneEyebrow").textContent = sent ? "Blader locked in" : "One more step";
@@ -879,20 +877,6 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
     });
   });
 
-  $("copyBtn").addEventListener("click", function () {
-    var btn = this;
-    function ok() { btn.textContent = "Copied"; setTimeout(function () { btn.textContent = "Copy my details"; }, 1800); }
-    function fallback() {
-      var r = document.createRange(); r.selectNodeContents($("doneText"));
-      var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r); btn.textContent = "Press copy now";
-    }
-    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(lastSummary).then(ok, fallback);
-    else fallback();
-  });
-  $("againBtn").addEventListener("click", function () {
-    form.reset(); ["name", "nick"].forEach(function (f) { setErr(f); });
-    done.classList.remove("show"); form.style.display = "grid"; $("name").focus({ preventScroll: true });
-  });
 })();
 </script>
 </body>
