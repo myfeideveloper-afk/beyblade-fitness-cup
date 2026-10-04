@@ -3,7 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Bey Showdown 2026</title>
+<title>Beyblade Fitness Cup 2026</title>
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
+<link rel="shortcut icon" href="favicon.ico">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700;800&display=swap">
@@ -68,7 +72,7 @@ a { color: var(--gold); }
 @media (max-width: 700px) { .track { height: 220vh; } }
 .stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; }
 .title { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; padding-inline: 16px; gap: 20px; pointer-events: none; will-change: transform, opacity; }
-.logo { position: relative; justify-self: center; max-width: 100%; font-size: clamp(40px, 11.5vw, 170px); filter: drop-shadow(0 6px 30px rgba(0, 0, 0, .55)); }
+.logo { position: relative; justify-self: center; max-width: 100%; font-size: clamp(30px, 9.2vw, 140px); filter: drop-shadow(0 6px 30px rgba(0, 0, 0, .55)); }
 .title h1 {
   margin: 0; font: 800 1em/.92 var(--f-serif); letter-spacing: .03em; text-transform: uppercase;
   background: var(--gold-grad); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent;
@@ -317,7 +321,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
   <div class="stage">
     <div class="title" id="title">
       <div class="eyebrow">Friends only &middot; 8 Nov 2026</div>
-      <div class="logo"><h1>Bey<br>Showdown</h1><span class="spark"><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 0 C53 30 70 47 100 50 C70 53 53 70 50 100 C47 70 30 53 0 50 C30 47 47 30 50 0Z"/></svg></span></div>
+      <div class="logo"><h1>Beyblade<br>Fitness Cup</h1><span class="spark"><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 0 C53 30 70 47 100 50 C70 53 53 70 50 100 C47 70 30 53 0 50 C30 47 47 30 50 0Z"/></svg></span></div>
       <div class="sub">A beyblade tournament for friends</div>
     </div>
 
@@ -336,8 +340,8 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
 
 <div class="marquee" aria-hidden="true">
   <div>
-    <span>Bey Showdown</span><span>Let it rip</span><span>Friends only</span><span>8 Nov 2026</span><span>5 PM to 8 PM</span><span>Stay gold</span>
-    <span>Bey Showdown</span><span>Let it rip</span><span>Friends only</span><span>8 Nov 2026</span><span>5 PM to 8 PM</span><span>Stay gold</span>
+    <span>Beyblade Fitness Cup</span><span>Let it rip</span><span>Friends only</span><span>8 Nov 2026</span><span>5 PM to 8 PM</span><span>Stay gold</span>
+    <span>Beyblade Fitness Cup</span><span>Let it rip</span><span>Friends only</span><span>8 Nov 2026</span><span>5 PM to 8 PM</span><span>Stay gold</span>
   </div>
 </div>
 
@@ -719,7 +723,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
   }
 
   function showDone(d, sent) {
-    lastSummary = "Bey Showdown, 8 Nov 2026, 5-8 PM\nName: " + d.name + "\nNickname: " + d.nickname + "\nEntry fee: " + ENTRY_FEE + " (pay on the spot)";
+    lastSummary = "Beyblade Fitness Cup, 8 Nov 2026, 5-8 PM\nName: " + d.name + "\nNickname: " + d.nickname + "\nEntry fee: " + ENTRY_FEE + " (pay on the spot)";
     $("doneNick").textContent = d.nickname;
     $("doneText").textContent = lastSummary.split("\n").slice(1).join("\n");
     $("doneEyebrow").textContent = sent ? "Blader locked in" : "One more step";
