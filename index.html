@@ -720,7 +720,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
     setTimeout(function () { card.classList.add("celebrate"); }, 540);
   }
 
-  function showDone(d, sent) {
+  function showDone(d, sent, restored) {
     lastSummary = "Beyblade Fitness Cup, 8 Nov 2026, 5-8 PM\nName: " + d.name + "\nNickname: " + d.nickname + "\nEntry fee: up to " + ENTRY_FEE + ", paid on the spot. It depends on the number of players and will be reduced if fewer join.";
     $("doneNick").textContent = d.nickname;
     $("doneText").textContent = lastSummary.split("\n").slice(1).join("\n");
@@ -730,13 +730,15 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
       : "Copy your details and send them to the organiser to confirm your spot.";
     $("doneTitle").textContent = sent ? "Registration successful" : "Almost there";
     var js = $("joinStatus"); js.hidden = !(sent && DUPLICATE_CHECK.csv); js.className = "join-status"; js.textContent = "Checking your spot...";
+    if (sent && !restored) { try { localStorage.setItem("bey-showdown-done", JSON.stringify(d)); } catch (e) { /* storage unavailable */ } }
     var card = form.closest(".card");
     function reveal() {
+      if (restored) { form.style.display = "none"; done.classList.add("show"); return; }
       card.classList.remove("smashing"); $("smash").classList.remove("play");
       form.style.display = "none"; done.classList.add("show");
       card.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
     }
-    if (sent && !reduce) { card.scrollIntoView({ behavior: "smooth", block: "center" }); playSmash(card); setTimeout(reveal, 1300); }
+    if (sent && !reduce && !restored) { card.scrollIntoView({ behavior: "smooth", block: "center" }); playSmash(card); setTimeout(reveal, 1300); }
     else reveal();
   }
 
@@ -877,6 +879,17 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
     });
   });
 
+
+  /* ---------- one registration per device: a device that already registered only sees its success card ---------- */
+  (function () {
+    // open the page with ?reset on the end to clear this for testing
+    if (/[?&]reset\b/.test(window.location.search)) { try { localStorage.removeItem("bey-showdown-done"); } catch (e) { /* ignore */ } return; }
+    var saved = null;
+    try { saved = JSON.parse(localStorage.getItem("bey-showdown-done") || "null"); } catch (e) { saved = null; }
+    if (!saved || !saved.nickname) return;
+    showDone(saved, true, true);
+    confirmJoin(saved);
+  })();
 })();
 </script>
 </body>
