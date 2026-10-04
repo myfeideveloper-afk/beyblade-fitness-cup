@@ -772,23 +772,30 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
   function fetchNicknames() {
     if (!DUPLICATE_CHECK.csv && !DUPLICATE_CHECK.api) return Promise.resolve(null);
     // Google can answer a first request with only the header row, so an empty list is asked for again (up to 3 more times)
-    function once() {
-      if (DUPLICATE_CHECK.api) {
-        var au = DUPLICATE_CHECK.api + (DUPLICATE_CHECK.api.indexOf("?") < 0 ? "?" : "&") + "nocache=" + Date.now() + "-" + Math.random().toString(36).slice(2, 10);
-        return fetch(au).then(function (r) { if (!r.ok) throw new Error("list unavailable"); return r.json(); }).then(function (j) {
-          var seen = {}, out = [];
-          (j.nicknames || []).forEach(function (x) { var raw = String(x || "").trim(), k = norm(raw); if (k && !seen[k]) { seen[k] = 1; out.push(raw); } });
-          return out;
-        });
-      }
+    function clean(names) {
+      var seen = {}, out = [];
+      names.forEach(function (x) { var raw = String(x || "").trim(), k = norm(raw); if (k && !seen[k]) { seen[k] = 1; out.push(raw); } });
+      return out;
+    }
+    function fromApi() {
+      var au = DUPLICATE_CHECK.api + (DUPLICATE_CHECK.api.indexOf("?") < 0 ? "?" : "&") + "nocache=" + Date.now() + "-" + Math.random().toString(36).slice(2, 10);
+      return fetch(au).then(function (r) { if (!r.ok) throw new Error("list unavailable"); return r.json(); }).then(function (j) {
+        if (!j || !Array.isArray(j.nicknames)) throw new Error("unexpected answer");
+        return clean(j.nicknames);
+      });
+    }
+    function fromCsv() {
       var url = DUPLICATE_CHECK.csv + (DUPLICATE_CHECK.csv.indexOf("?") < 0 ? "?" : "&") + "t=" + Date.now();
       return fetch(url, { cache: "no-store" }).then(function (r) { if (!r.ok) throw new Error("list unavailable"); return r.text(); }).then(function (text) {
         var rows = parseCsv(text), head = (rows[0] || []).map(norm), ki = head.indexOf("nickname");
         if (ki < 0) ki = 0;
-        var seen = {}, out = [];
-        rows.slice(1).forEach(function (r) { var raw = String(r[ki] || "").trim(), k = norm(raw); if (k && !seen[k]) { seen[k] = 1; out.push(raw); } });
-        return out;
+        return clean(rows.slice(1).map(function (r) { return r[ki]; }));
       });
+    }
+    // the live script is preferred; if it is broken or unreachable, the published csv is used instead
+    function once() {
+      if (!DUPLICATE_CHECK.api) return fromCsv();
+      return fromApi().catch(function (e) { if (DUPLICATE_CHECK.csv) return fromCsv(); throw e; });
     }
     function attempt(n) {
       return once().then(function (list) {
