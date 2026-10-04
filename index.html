@@ -157,6 +157,18 @@ html.locked, html.locked body { overflow: hidden; overscroll-behavior: none; }
 .rules li::before { content: ""; flex: none; width: 9px; height: 9px; background: var(--gold); transform: rotate(45deg); }
 
 /* ---------- Register ---------- */
+.t-venue { display: grid; gap: 6px; margin-top: 18px; }
+.t-venue b { font: 700 clamp(18px, 3.2vw, 24px)/1.15 var(--f-cond); letter-spacing: .06em; text-transform: uppercase; color: var(--gold-hi); }
+.location { padding-inline: 16px; padding-block: 8px clamp(36px, 7vh, 80px); background: rgba(5, 7, 15, .86); }
+.loc-grid { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: clamp(20px, 5vw, 48px); align-items: center; }
+.loc-pic { position: relative; margin: 0; border: 1px solid var(--gold); box-shadow: 0 0 50px rgba(217, 180, 90, .18); overflow: hidden; }
+.loc-pic img { display: block; width: 100%; height: auto; }
+.loc-pic figcaption { position: absolute; left: 0; right: 0; bottom: 0; padding: 40px 16px 14px; font: 700 15px/1.2 var(--f-cond); letter-spacing: .22em; text-transform: uppercase; color: var(--gold-hi); background: linear-gradient(transparent, rgba(5, 7, 15, .85)); }
+.loc-body { min-width: 0; }
+.loc-body h2 { margin: 12px 0 14px; font: 800 clamp(30px, 6vw, 52px)/1.02 var(--f-serif); text-transform: uppercase; letter-spacing: .03em; text-wrap: balance; }
+.map-btn { display: inline-block; margin-top: 22px; padding: 14px 20px; border: 1px solid var(--gold); color: var(--gold-hi); text-decoration: none; font: 700 15px/1 var(--f-cond); letter-spacing: .2em; text-transform: uppercase; }
+.map-btn:hover { background: rgba(217, 180, 90, .12); }
+@media (max-width: 700px) { .loc-grid { grid-template-columns: 1fr; } .loc-pic { max-width: 380px; } }
 .prizes { padding-inline: 16px; padding-block: 8px clamp(36px, 7vh, 80px); background: rgba(5, 7, 15, .86); }
 .prizes .prnote { margin: 0 0 22px; }
 .prizes h2 { margin: 12px 0 10px; font: 800 clamp(30px, 6vw, 52px)/1 var(--f-serif); text-transform: uppercase; letter-spacing: .03em; }
@@ -369,6 +381,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
         <span class="k">Date</span>
         <div class="big"><span class="gold">8 Nov</span><small>Sunday 2026</small></div>
         <div class="t-time">5 PM <em>to</em> 8 PM</div>
+        <div class="t-venue"><span class="k">Venue</span><b>Alira @ Tropicana Metropark</b></div>
       </div>
       <div class="t-rest">
         <div>
@@ -391,6 +404,22 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
       <li>RM15 is the maximum entry fee. If fewer players join, the fee will be reduced. Paid on the spot. There are 32 spots.</li>
       <li>Your nickname becomes your blader name on the bracket.</li>
     </ul>
+  </div>
+</section>
+
+<!-- ======== LOCATION ======== -->
+<section class="location" id="location" aria-labelledby="locTitle">
+  <div class="wrap loc-grid">
+    <figure class="loc-pic">
+      <img src="assets/location.jpg" alt="Alira @ Tropicana Metropark tower and entrance" width="650" height="869" loading="lazy">
+      <figcaption>Alira @ Tropicana Metropark</figcaption>
+    </figure>
+    <div class="loc-body">
+      <div class="eyebrow">Venue</div>
+      <h2 id="locTitle" class="gold">Alira @ Tropicana Metropark</h2>
+      <p class="lede">The tournament takes place at Alira @ Tropicana Metropark. See you at the stadium.</p>
+      <a class="map-btn" href="https://maps.app.goo.gl/aRePaj5bDnQb4bZP7" target="_blank" rel="noopener">Open in Google Maps</a>
+    </div>
   </div>
 </section>
 
@@ -814,7 +843,9 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
   }
 
   var slotsEl = $("slots"), playersSec = $("players"), formMsg = $("formMsg");
+  var submitting = false, sentNick = null, lastList = null;
   function setFull(full) {
+    if (submitting) return;
     form.querySelectorAll("input, button").forEach(function (el) { el.disabled = full; });
     if (full) $("submitBtn").dataset.full = "1"; else delete $("submitBtn").dataset.full;
     if (listReady || full) $("submitBtn").textContent = full ? "Registration full" : "Lock me in";
@@ -907,11 +938,45 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
     }, 3000);
   }
 
+  /* ---------- submitting: wait until the sheet really lists the nickname, then show the success card ---------- */
+  function lockForm(on) {
+    submitting = on;
+    form.querySelectorAll("input").forEach(function (el) { el.readOnly = on; });
+    var btn = $("submitBtn");
+    btn.disabled = on;
+    if (on) { btn.textContent = "Registering..."; formMsg.textContent = "Saving your registration. Please wait and keep this page open."; }
+    else { btn.textContent = "Lock me in"; formMsg.textContent = ""; }
+  }
+  function failForm(msg) { lockForm(false); formMsg.textContent = msg; }
+  function finishSuccess(d, list) {
+    rememberNick(d.nickname);
+    submitting = false;
+    if (list) { players = list; playersKnown = true; lastList = list; }
+    showDone(d, true);
+    var js = $("joinStatus"), k = norm(d.nickname), at = list ? list.findIndex(function (x) { return norm(x) === k; }) : -1;
+    if (at >= 0) { js.hidden = false; js.className = "join-status ok"; js.textContent = "You are on the player list: spot " + (at + 1) + " of " + MAX_PLAYERS + "."; }
+    else if (list) { js.hidden = true; }
+    setTimeout(function () { if (list) renderPlayers(); }, 1400);
+  }
+  // asks for the list every 2 seconds (up to about 30 seconds) until the nickname is in it
+  function waitForSheet(d) {
+    var k = norm(d.nickname), tries = 0, nulls = 0;
+    function look() {
+      fetchNicknames().then(function (list) {
+        tries++;
+        if (list) {
+          nulls = 0;
+          if (list.some(function (x) { return norm(x) === k; })) { finishSuccess(d, list); return; }
+        } else if (++nulls >= 3) { finishSuccess(d, null); return; }   // the list cannot be read at all: trust that the request went through
+        if (tries >= 15) { failForm("Your registration was sent but is not on the list yet. Do not register again: press Lock me in once more to check."); return; }
+        setTimeout(look, 2000);
+      });
+    }
+    look();
+  }
   function send(d) {
     var gf = GOOGLE_FORM, useGoogle = !!(gf.action && gf.fields.name && gf.fields.nickname);
-    var btn = $("submitBtn");
-    if (!useGoogle && !FORM_ENDPOINT) { btn.disabled = false; btn.textContent = "Lock me in"; showDone(d, false); return; }
-    btn.textContent = "Sending...";
+    if (!useGoogle && !FORM_ENDPOINT) { lockForm(false); showDone(d, false); return; }
     var req;
     if (useGoogle) {
       var body = new URLSearchParams();
@@ -920,27 +985,27 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
     } else {
       req = fetch(FORM_ENDPOINT, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(d) });
     }
-    req
-      .then(function () { rememberNick(d.nickname); showDone(d, true); confirmJoin(d); })
-      .catch(function () { showDone(d, false); })
-      .finally(function () { btn.disabled = false; btn.textContent = "Lock me in"; });
+    req.then(function () {
+      sentNick = norm(d.nickname);
+      if (!listConfigured) { finishSuccess(d, null); return; }
+      waitForSheet(d);
+    }).catch(function () { failForm("Could not send your registration. Check your connection and try again."); });
   }
 
   form.addEventListener("submit", function (e) {
     e.preventDefault();
+    if (submitting) return;                                  // blocks double submit (button, Enter key, double tap)
     if (listConfigured && !listReady) return;
     var d = validate(); if (!d) return;
     try { localStorage.setItem("bey-showdown-reg", JSON.stringify(d)); } catch (err) { /* storage unavailable */ }
-    var btn = $("submitBtn"); btn.disabled = true; btn.textContent = "Checking...";
+    lockForm(true);
+    var k = norm(d.nickname);
+    if (sentNick === k) { waitForSheet(d); return; }          // already sent: only check again, never send twice
     fetchNicknames().then(function (list) {
-      var k = norm(d.nickname);
       var taken = list ? list.some(function (x) { return norm(x) === k; }) : savedNicks().indexOf(k) >= 0;
-      if (list) { players = list; playersKnown = true; renderPlayers(); }
-      if (list && players.length >= MAX_PLAYERS) { btn.disabled = false; return; }
-      if (taken) {
-        setErr("nick", "This nickname is already taken. Pick another blader name.");
-        btn.disabled = false; btn.textContent = "Lock me in"; $("nick").focus(); return;
-      }
+      if (list) { players = list; playersKnown = true; }
+      if (list && list.length >= MAX_PLAYERS) { lockForm(false); setFull(true); return; }
+      if (taken) { lockForm(false); setErr("nick", "This nickname is already taken. Pick another blader name."); $("nick").focus(); return; }
       send(d);
     });
   });
