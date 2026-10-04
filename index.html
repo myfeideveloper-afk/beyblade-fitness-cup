@@ -153,6 +153,26 @@ html.locked, html.locked body { overflow: hidden; overscroll-behavior: none; }
 .rules li::before { content: ""; flex: none; width: 9px; height: 9px; background: var(--gold); transform: rotate(45deg); }
 
 /* ---------- Register ---------- */
+.prizes { padding-inline: 16px; padding-block: 8px clamp(36px, 7vh, 80px); background: rgba(5, 7, 15, .86); }
+.prizes h2 { margin: 12px 0 22px; font: 800 clamp(30px, 6vw, 52px)/1 var(--f-serif); text-transform: uppercase; letter-spacing: .03em; }
+.prize-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.prize { display: grid; gap: 14px; align-content: start; min-width: 0; padding: 18px; border: 1px solid var(--line); background: var(--panel); }
+.prize.first { grid-column: 1 / -1; grid-template-columns: minmax(0, 220px) minmax(0, 1fr); align-items: center; gap: 24px; padding: 24px; border-color: var(--gold); box-shadow: 0 0 50px rgba(217, 180, 90, .18); }
+.pic { position: relative; display: grid; place-items: center; aspect-ratio: 1; min-width: 0; }
+.prize.first .pic::before { content: ""; position: absolute; inset: -8%; border-radius: 50%; background: radial-gradient(circle, rgba(255, 224, 140, .3), rgba(217, 180, 90, 0) 65%); }
+.pic img { position: relative; width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 12px 20px rgba(0, 0, 0, .6)); animation: pspin 24s linear infinite; }
+@keyframes pspin { to { transform: rotate(360deg); } }
+.pic.ph { border: 1px dashed rgba(217, 180, 90, .4); background: rgba(217, 180, 90, .05); aspect-ratio: 16 / 9; }
+.pic.ph span { font: 800 48px/1 var(--f-serif); color: rgba(217, 180, 90, .5); }
+.pbody { display: grid; gap: 6px; min-width: 0; justify-items: start; }
+.rank { margin: 0; font: 800 clamp(30px, 5vw, 46px)/1 var(--f-serif); text-transform: uppercase; }
+.prize h3 { margin: 0; font: 700 clamp(19px, 3vw, 26px)/1.15 var(--f-cond); letter-spacing: .06em; text-transform: uppercase; overflow-wrap: anywhere; }
+.pnote { margin: 0; color: var(--muted); }
+.nw { white-space: nowrap; }
+.rank { white-space: nowrap; }
+.tbc { margin-top: 4px; padding: 3px 8px; border: 1px solid var(--line); font: 700 12px/1 var(--f-cond); letter-spacing: .2em; color: var(--gold-hi); }
+@media (max-width: 760px) { .prize-grid { grid-template-columns: 1fr; } .prize.first { grid-template-columns: 1fr; } .prize.first .pic { max-width: 240px; justify-self: center; width: 100%; } }
+@media (prefers-reduced-motion: reduce) { .pic img { animation: none !important; } }
 .players { padding-inline: 16px; padding-block: 8px clamp(36px, 7vh, 80px); background: rgba(5, 7, 15, .86); }
 .players[hidden] { display: none; }
 .players h2 { margin: 12px 0 10px; font: 800 clamp(30px, 6vw, 52px)/1 var(--f-serif); text-transform: uppercase; letter-spacing: .03em; }
@@ -356,6 +376,35 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
   </div>
 </section>
 
+<!-- ======== PRIZES ======== -->
+<section class="prizes" id="prizes" aria-labelledby="prTitle">
+  <div class="wrap">
+    <div class="eyebrow">What you can win</div>
+    <h2 id="prTitle" class="gold">Prizes</h2>
+    <div class="prize-grid">
+      <article class="prize first">
+        <div class="pic"><img src="assets/bey-red.png" alt="UX-00 Aero Pegasus 3-70A Red Ver." width="640" height="640" loading="lazy"></div>
+        <div class="pbody">
+          <p class="rank gold">1st</p>
+          <h3>UX-00 Aero Pegasus 3-70A Red Ver.</h3>
+        </div>
+      </article>
+      <article class="prize">
+        <div class="pic ph" role="img" aria-label="Photo coming soon"><span>?</span></div>
+        <div class="pbody"><p class="rank gold">2nd</p><h3>Prize to be confirmed</h3><span class="tbc">TBC</span></div>
+      </article>
+      <article class="prize">
+        <div class="pic ph" role="img" aria-label="Photo coming soon"><span>?</span></div>
+        <div class="pbody"><p class="rank gold">3rd</p><h3>Prize to be confirmed</h3><span class="tbc">TBC</span></div>
+      </article>
+      <article class="prize">
+        <div class="pic ph" role="img" aria-label="Photo coming soon"><span>?</span></div>
+        <div class="pbody"><p class="rank gold">4th&ndash;8th</p><h3>Shared parts: <span class="nw">UX-15</span> / <span class="nw">UX-21</span> / <span class="nw">CX-11</span></h3><p class="pnote">Pick by position.</p><span class="tbc">TBC</span></div>
+      </article>
+    </div>
+  </div>
+</section>
+
 <!-- ======== JOINED PLAYERS ======== -->
 <section class="players" id="players" aria-labelledby="plTitle" hidden>
   <div class="wrap">
@@ -365,6 +414,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
     <div class="bar" aria-hidden="true"><i id="plBar"></i></div>
     <ol class="slots" id="slots"></ol>
     <p class="help" id="plNote"></p>
+    <p class="join-status warn" id="plPending" role="status" hidden></p>
   </div>
 </section>
 
@@ -385,7 +435,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
 
       <form id="regForm" novalidate>
         <div class="field" data-f="name">
-          <label for="name">Name</label>
+          <label for="name">Facebook Name</label>
           <input id="name" name="name" type="text" autocomplete="name" placeholder="Your full name" maxlength="80">
           <p class="err" id="err-name" role="alert"></p>
         </div>
@@ -752,15 +802,31 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
     $("plNote").textContent = n >= MAX_PLAYERS ? "All spots are taken." : (MAX_PLAYERS - n) + " spot" + (MAX_PLAYERS - n === 1 ? "" : "s") + " left.";
     if (!done.classList.contains("show")) setFull(n >= MAX_PLAYERS);
   }
+  // A registration made on this device in the last 30 minutes that the published list does not show yet
+  function pendingMine() {
+    if (!playersKnown) return [];
+    var seen = {}; players.forEach(function (x) { seen[norm(x)] = 1; });
+    return localJoined().filter(function (e) { return !seen[e.k] && Date.now() - e.ts < 30 * 60 * 1000; });
+  }
+  var pollTimer = null;
   function loadPlayers() {
-    fetchNicknames().then(function (list) { if (list) { players = list; playersKnown = true; renderPlayers(); } });
+    clearTimeout(pollTimer);
+    fetchNicknames().then(function (list) {
+      if (list) { players = list; playersKnown = true; renderPlayers(); }
+      var p = pendingMine(), box = $("plPending");
+      if (p.length) {
+        box.hidden = false;
+        box.textContent = "Your registration (" + p.map(function (e) { return e.n; }).join(", ") + ") was sent but is not on the list yet. Checking again...";
+        pollTimer = setTimeout(loadPlayers, 5000);
+      } else box.hidden = true;
+    });
   }
   loadPlayers();
   setInterval(function () { if (!document.hidden) loadPlayers(); }, 60000);
 
   // 3 seconds after a registration is sent, reload the list and tell the player whether they are on it (a few more tries if not yet)
   function confirmJoin(d) {
-    var st = $("joinStatus"), k = norm(d.nickname), waits = [3000, 4000, 5000], i = 0;
+    var st = $("joinStatus"), k = norm(d.nickname), waits = [3000, 4000, 5000, 6000, 6000, 6000], i = 0;
     if (!DUPLICATE_CHECK.csv) { st.hidden = true; return; }
     function attempt() {
       fetchNicknames().then(function (list) {
@@ -771,7 +837,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
         }
         i++;
         if (i < waits.length) setTimeout(attempt, waits[i]);
-        else { st.className = "join-status warn"; st.textContent = "Your registration was sent, but you are not on the list yet. Refresh this page in a minute to check."; }
+        else { st.className = "join-status warn"; st.textContent = "Your registration was sent, but you are not on the list yet. The list keeps checking by itself. Scroll up to Joined players to see it appear."; loadPlayers(); }
       });
     }
     setTimeout(attempt, waits[0]);
