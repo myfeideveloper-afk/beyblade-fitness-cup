@@ -182,6 +182,11 @@ html.locked, html.locked body { overflow: hidden; overscroll-behavior: none; }
 .players[hidden] { display: none; }
 .players h2 { margin: 12px 0 10px; font: 800 clamp(30px, 6vw, 52px)/1 var(--f-serif); text-transform: uppercase; letter-spacing: .03em; }
 .plcount { margin: 0 0 12px; font: 700 18px/1 var(--f-cond); letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
+.refresh { display: inline-grid; place-items: center; width: 34px; height: 34px; margin-left: 8px; vertical-align: middle; padding: 0; color: var(--gold-hi); background: rgba(5, 7, 15, .6); border: 1px solid var(--line); border-radius: 50%; cursor: pointer; transition: border-color .2s, background .2s; }
+.refresh:hover { border-color: var(--gold); background: rgba(217, 180, 90, .12); }
+.refresh svg { width: 18px; height: 18px; }
+.refresh.spin svg { animation: rspin .8s linear infinite; }
+@keyframes rspin { to { transform: rotate(360deg); } }
 .plcount b { color: var(--gold-hi); font-size: 26px; font-variant-numeric: tabular-nums; }
 .bar { height: 4px; background: rgba(255, 255, 255, .12); margin-bottom: 18px; overflow: hidden; }
 .bar i { display: block; height: 100%; background: var(--gold-grad); transform-origin: left; transform: scaleX(0); transition: transform .8s ease; }
@@ -417,11 +422,10 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
   <div class="wrap">
     <div class="eyebrow">Who's in</div>
     <h2 id="plTitle" class="gold">Joined players</h2>
-    <p class="plcount"><b id="plCount">0</b> / <span id="plMax">32</span> spots taken</p>
+    <p class="plcount"><b id="plCount">0</b> / <span id="plMax">32</span> spots taken <button class="refresh" id="plRefresh" type="button" aria-label="Refresh the player list" title="Refresh"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></p>
     <div class="bar" aria-hidden="true"><i id="plBar"></i></div>
     <ol class="slots" id="slots"></ol>
     <p class="help" id="plNote"></p>
-    <p class="join-status warn" id="plPending" role="status" hidden></p>
   </div>
 </section>
 
@@ -813,25 +817,17 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
     $("plNote").textContent += " Updated " + stamp + ".";
     if (!done.classList.contains("show")) setFull(n >= MAX_PLAYERS);
   }
-  // A registration made on this device in the last 30 minutes that the published list does not show yet
-  function pendingMine() {
-    if (!playersKnown) return [];
-    var seen = {}; players.forEach(function (x) { seen[norm(x)] = 1; });
-    return localJoined().filter(function (e) { return !seen[e.k] && Date.now() - e.ts < 30 * 60 * 1000; });
-  }
-  var pollTimer = null;
+  // the published sheet is the one source of truth: a nickname that is not in it is not registered
   function loadPlayers() {
-    clearTimeout(pollTimer);
-    fetchNicknames().then(function (list) {
+    var btn = $("plRefresh"); btn.classList.add("spin"); btn.disabled = true;
+    var started = Date.now();
+    return fetchNicknames().then(function (list) {
       if (list) { players = list; playersKnown = true; renderPlayers(); }
-      var p = pendingMine(), box = $("plPending");
-      if (p.length) {
-        box.hidden = false;
-        box.textContent = "Your registration (" + p.map(function (e) { return e.n; }).join(", ") + ") was sent but is not on the list yet. Checking again...";
-        pollTimer = setTimeout(loadPlayers, 5000);
-      } else box.hidden = true;
+      setTimeout(function () { btn.classList.remove("spin"); btn.disabled = false; }, Math.max(0, 600 - (Date.now() - started)));
+      return list;
     });
   }
+  $("plRefresh").addEventListener("click", loadPlayers);
   loadPlayers();
   setInterval(function () { if (!document.hidden) loadPlayers(); }, 15000);
   // refresh the moment the page comes back: tab switched back, phone unlocked, back/forward cache, network restored
@@ -842,21 +838,17 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
 
   // 3 seconds after a registration is sent, reload the list and tell the player whether they are on it (a few more tries if not yet)
   function confirmJoin(d) {
-    var st = $("joinStatus"), k = norm(d.nickname), waits = [3000, 4000, 5000, 6000, 6000, 6000], i = 0;
+    var st = $("joinStatus"), k = norm(d.nickname);
     if (!DUPLICATE_CHECK.csv) { st.hidden = true; return; }
-    function attempt() {
+    setTimeout(function () {
       fetchNicknames().then(function (list) {
-        if (list) {
-          players = list; playersKnown = true; renderPlayers();
-          var at = list.findIndex(function (x) { return norm(x) === k; });
-          if (at >= 0) { st.className = "join-status ok"; st.textContent = "You are on the player list: spot " + (at + 1) + " of " + MAX_PLAYERS + "."; return; }
-        }
-        i++;
-        if (i < waits.length) setTimeout(attempt, waits[i]);
-        else { st.className = "join-status warn"; st.textContent = "Your registration was sent, but you are not on the list yet. The list keeps checking by itself. Scroll up to Joined players to see it appear."; loadPlayers(); }
+        if (!list) { st.className = "join-status warn"; st.textContent = "Could not load the player list. Use the refresh button on the list to check."; return; }
+        players = list; playersKnown = true; renderPlayers();
+        var at = list.findIndex(function (x) { return norm(x) === k; });
+        if (at >= 0) { st.className = "join-status ok"; st.textContent = "You are on the player list: spot " + (at + 1) + " of " + MAX_PLAYERS + "."; }
+        else { st.className = "join-status warn"; st.textContent = "You are not on the player list. Use the refresh button on the list to check again."; }
       });
-    }
-    setTimeout(attempt, waits[0]);
+    }, 3000);
   }
 
   function send(d) {
@@ -885,7 +877,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
     var btn = $("submitBtn"); btn.disabled = true; btn.textContent = "Checking...";
     fetchNicknames().then(function (list) {
       var k = norm(d.nickname);
-      var taken = savedNicks().indexOf(k) >= 0 || (list || []).some(function (x) { return norm(x) === k; });
+      var taken = list ? list.some(function (x) { return norm(x) === k; }) : savedNicks().indexOf(k) >= 0;
       if (list) { players = list; playersKnown = true; renderPlayers(); }
       if (list && players.length >= MAX_PLAYERS) { btn.disabled = false; return; }
       if (taken) {
@@ -905,7 +897,14 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
     try { saved = JSON.parse(localStorage.getItem("bey-showdown-done") || "null"); } catch (e) { saved = null; }
     if (!saved || !saved.nickname) return;
     showDone(saved, true, true);
-    confirmJoin(saved);
+    var key = norm(saved.nickname);
+    fetchNicknames().then(function (list) {
+      if (list && !list.some(function (x) { return norm(x) === key; })) {
+        // no longer on the list: this device may register again
+        try { localStorage.removeItem("bey-showdown-done"); } catch (e) { /* ignore */ }
+        done.classList.remove("show"); form.style.display = "grid";
+      } else confirmJoin(saved);
+    });
   })();
 })();
 </script>
