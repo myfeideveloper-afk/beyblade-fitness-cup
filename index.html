@@ -190,7 +190,6 @@ html.locked, html.locked body { overflow: hidden; overscroll-behavior: none; }
 .plcount b { color: var(--gold-hi); font-size: 26px; font-variant-numeric: tabular-nums; }
 .bar { height: 4px; background: rgba(255, 255, 255, .12); margin-bottom: 18px; overflow: hidden; }
 .bar i { display: block; height: 100%; background: var(--gold-grad); transform-origin: left; transform: scaleX(0); transition: transform .8s ease; }
-.sheetframe { display: block; width: 100%; height: 420px; margin: 0 0 12px; border: 1px solid var(--line); background: #fff; color-scheme: light; }
 .slots { list-style: none; margin: 0 0 12px; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
 .slots li { display: flex; align-items: baseline; gap: 10px; padding: 11px 12px; min-width: 0; border: 1px dashed rgba(152, 163, 192, .3); color: #55617f; font: 600 15px/1.2 var(--f-cond); letter-spacing: .08em; text-transform: uppercase; }
 .slots li span { font-variant-numeric: tabular-nums; font-size: 12px; letter-spacing: .1em; opacity: .8; }
@@ -419,13 +418,13 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
 </section>
 
 <!-- ======== JOINED PLAYERS ======== -->
-<section class="players" id="players" aria-labelledby="plTitle">
+<section class="players" id="players" aria-labelledby="plTitle" hidden>
   <div class="wrap">
     <div class="eyebrow">Who's in</div>
     <h2 id="plTitle" class="gold">Joined players</h2>
     <p class="plcount"><b id="plCount">0</b> / <span id="plMax">32</span> spots taken <button class="refresh" id="plRefresh" type="button" aria-label="Refresh the player list" title="Refresh"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></p>
     <div class="bar" aria-hidden="true"><i id="plBar"></i></div>
-    <iframe class="sheetframe" id="sheetFrame" title="Joined players" loading="lazy" referrerpolicy="no-referrer"></iframe>
+    <ol class="slots" id="slots"></ol>
     <p class="help" id="plNote"></p>
   </div>
 </section>
@@ -523,8 +522,6 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
      Leave both empty to turn all of this off. */
   var DUPLICATE_CHECK = { api: "", csv: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQSaS3lGVKPKNzhJlVASAbBmiAV6MobzBuDucLHq5iXOv8WFa5WQbzvvcz38ycGdRqbUJ0O4143aPTn/pub?gid=1631540710&single=true&output=csv" };
   var MAX_PLAYERS = 32;
-  // The joined-players list is Google's own published page of the nickname tab, shown in an iframe.
-  var SHEET_VIEW = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQSaS3lGVKPKNzhJlVASAbBmiAV6MobzBuDucLHq5iXOv8WFa5WQbzvvcz38ycGdRqbUJ0O4143aPTn/pubhtml?gid=1631540710&single=true&widget=true&headers=false";
 
   var GOOGLE_FORM = {
     action: "https://docs.google.com/forms/d/e/1FAIpQLScnRhgmkLTpdPq5e63EgpM4_YanAIEvo1zq4EJceDIdyCRyuA/formResponse",
@@ -802,9 +799,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
     return attempt(0).catch(function () { return null; });
   }
 
-  var playersSec = $("players"), formMsg = $("formMsg"), sheetFrame = $("sheetFrame");
-  function loadSheetFrame() { sheetFrame.src = SHEET_VIEW + "&t=" + Date.now(); }
-  loadSheetFrame();
+  var slotsEl = $("slots"), playersSec = $("players"), formMsg = $("formMsg");
   function setFull(full) {
     form.querySelectorAll("input, button").forEach(function (el) { el.disabled = full; });
     $("submitBtn").textContent = full ? "Registration full" : "Lock me in";
@@ -812,9 +807,21 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
   }
   function renderPlayers() {
     if ((!DUPLICATE_CHECK.csv && !DUPLICATE_CHECK.api) || !playersKnown) return;
+    playersSec.hidden = false;
     var n = Math.min(players.length, MAX_PLAYERS);
     $("plCount").textContent = String(n); $("plMax").textContent = String(MAX_PLAYERS);
     $("plBar").style.transform = "scaleX(" + (n / MAX_PLAYERS) + ")";
+    slotsEl.innerHTML = ""; var mine = savedNicks();
+    for (var i = 0; i < MAX_PLAYERS; i++) {
+      var li = document.createElement("li"), num = document.createElement("span"), nm = document.createElement("b");
+      num.textContent = String(i + 1).padStart(2, "0"); li.appendChild(num);
+      if (i < players.length) {
+        li.className = "on"; nm.textContent = players[i];
+        li.appendChild(nm);
+        if (mine.indexOf(norm(players[i])) >= 0) { li.className += " me"; var tag = document.createElement("em"); tag.textContent = "You"; li.appendChild(tag); }
+      } else { nm.textContent = "Open"; li.appendChild(nm); }
+      slotsEl.appendChild(li);
+    }
     var stamp = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
     $("plNote").textContent = n >= MAX_PLAYERS ? "All spots are taken." : (MAX_PLAYERS - n) + " spot" + (MAX_PLAYERS - n === 1 ? "" : "s") + " left.";
     $("plNote").textContent += " Updated " + stamp + ".";
@@ -830,7 +837,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
       return list;
     });
   }
-  $("plRefresh").addEventListener("click", function () { loadSheetFrame(); loadPlayers(); });
+  $("plRefresh").addEventListener("click", loadPlayers);
   loadPlayers();
   setInterval(function () { if (!document.hidden) loadPlayers(); }, 15000);
   // refresh the moment the page comes back: tab switched back, phone unlocked, back/forward cache, network restored
