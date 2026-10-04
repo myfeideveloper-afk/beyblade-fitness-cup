@@ -154,7 +154,8 @@ html.locked, html.locked body { overflow: hidden; overscroll-behavior: none; }
 
 /* ---------- Register ---------- */
 .prizes { padding-inline: 16px; padding-block: 8px clamp(36px, 7vh, 80px); background: rgba(5, 7, 15, .86); }
-.prizes h2 { margin: 12px 0 22px; font: 800 clamp(30px, 6vw, 52px)/1 var(--f-serif); text-transform: uppercase; letter-spacing: .03em; }
+.prizes .prnote { margin: 0 0 22px; }
+.prizes h2 { margin: 12px 0 10px; font: 800 clamp(30px, 6vw, 52px)/1 var(--f-serif); text-transform: uppercase; letter-spacing: .03em; }
 .prize-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
 .prize { display: grid; gap: 14px; align-content: start; min-width: 0; padding: 18px; border: 1px solid var(--line); background: var(--panel); }
 .prize.first { grid-column: 1 / -1; grid-template-columns: minmax(0, 220px) minmax(0, 1fr); align-items: center; gap: 24px; padding: 24px; border-color: var(--gold); box-shadow: 0 0 50px rgba(217, 180, 90, .18); }
@@ -208,6 +209,7 @@ label, legend { font: 700 14px/1 var(--f-cond); letter-spacing: .24em; text-tran
 input[type="text"], input[type="tel"] { width: 100%; min-width: 0; font: 500 18px/1.2 var(--f-body); color: var(--text); background: rgba(5, 7, 15, .75); border: 1px solid var(--line); border-radius: 2px; padding: 15px 14px; }
 input::placeholder { color: #5a6685; }
 input:focus-visible { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(217,180,90,.25); }
+.opt { color: var(--muted); font-weight: 600; letter-spacing: .12em; }
 .help { margin: 0; font-size: 14px; color: var(--muted); }
 .err { margin: 0; font-size: 14px; color: #ff8a9a; }
 .invalid input { border-color: #ff8a9a; }
@@ -355,7 +357,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
       <div class="t-rest">
         <div>
           <span class="k">Entry fee</span>
-          <p><span class="price">RM15</span> per player, paid on the spot at the event.</p>
+          <p><span class="price">RM15</span> per player for now. The fee depends on the number of players and may be adjusted. Paid on the spot at the event.</p>
         </div>
         <div>
           <span class="k">On the house</span>
@@ -370,7 +372,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
 
     <ul class="rules">
       <li>Invited friends only. Please don't forward this page.</li>
-      <li>Each player pays RM15 on the spot. There are 32 spots.</li>
+      <li>The entry fee is RM15 for now. It depends on the number of players and may be adjusted. Paid on the spot. There are 32 spots.</li>
       <li>Your nickname becomes your blader name on the bracket.</li>
     </ul>
   </div>
@@ -381,6 +383,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
   <div class="wrap">
     <div class="eyebrow">What you can win</div>
     <h2 id="prTitle" class="gold">Prizes</h2>
+    <p class="lede prnote">The prize list is confirmed based on the number of players.</p>
     <div class="prize-grid">
       <article class="prize first">
         <div class="pic"><img src="assets/bey-red.png" alt="UX-00 Aero Pegasus 3-70A Red Ver." width="640" height="640" loading="lazy"></div>
@@ -424,7 +427,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
     <div class="card">
       <div class="eyebrow">Registration</div>
       <h3 id="regTitle" class="gold">Register your blader</h3>
-      <p>Takes a minute. Answer every field so we can lock in your spot.</p>
+      <p>Takes a minute. Enter your name and your blader nickname.</p>
 
       <div class="smash" id="smash" aria-hidden="true">
         <div class="sm-flash"></div><div class="sm-ring"></div><div class="sm-ring r2"></div>
@@ -447,16 +450,10 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
           <p class="err" id="err-nick" role="alert"></p>
         </div>
 
-        <div class="field" data-f="phone">
-          <label for="phone">Contact number</label>
-          <input id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="012-345 6789" maxlength="20">
-          <p class="err" id="err-phone" role="alert"></p>
-        </div>
-
         <div class="fee">
           <span class="k">Entry fee</span>
           <p class="fee-amt"><b>RM15</b> per player</p>
-          <p class="help">Pay on the spot at the event. Nothing to pay now.</p>
+          <p class="help">The fee depends on the number of players and may be adjusted. Pay on the spot at the event. Nothing to pay now.</p>
         </div>
 
         <p class="err" id="formMsg" role="alert"></p>
@@ -502,7 +499,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
   var FORM_ENDPOINT = "";
 
   /* Option B: send registrations into a Google Form (answers land in its Responses sheet).
-     1. In the form, make 3 questions: Name (short answer), Nickname (short answer), Contact number (short answer).
+     1. In the form, make 2 questions: Name (short answer) and Nickname (short answer).
      2. Form menu (three dots) > "Get pre-filled link", type a sample answer in every question, press "Get link".
         The link looks like .../d/e/FORM_ID/viewform?usp=pp_url&entry.111=a&entry.222=b ...
      3. Copy FORM_ID into action (below) and each entry.NNN number into the matching field.
@@ -520,7 +517,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
 
   var GOOGLE_FORM = {
     action: "https://docs.google.com/forms/d/e/1FAIpQLScnRhgmkLTpdPq5e63EgpM4_YanAIEvo1zq4EJceDIdyCRyuA/formResponse",
-    fields: { name: "entry.2052856706", nickname: "entry.1340230335", phone: "entry.1161564355" }
+    fields: { name: "entry.2052856706", nickname: "entry.1340230335" }
   };
 
   /* Optional: a video file you host yourself, e.g. "assets/bg.mp4". It replaces the YouTube embed,
@@ -697,17 +694,15 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
   }
   function validate() {
     var ok = true, first = null;
-    var name = $("name").value.trim(), nick = $("nick").value.trim(), phone = $("phone").value.trim();
-    var digits = phone.replace(/\D/g, "");
+    var name = $("name").value.trim(), nick = $("nick").value.trim();
     function bad(f, m, el) { setErr(f, m); ok = false; if (!first) first = el; }
-    setErr("name"); setErr("nick"); setErr("phone");
+    setErr("name"); setErr("nick");
     if (name.length < 2) bad("name", "Enter your name.", $("name"));
     if (nick.length < 2) bad("nick", "Pick a blader nickname (at least 2 characters).", $("nick"));
-    if (!/^[+\d][\d\s\-()]*$/.test(phone) || digits.length < 8 || digits.length > 15) bad("phone", "Enter a valid contact number, for example 012-345 6789.", $("phone"));
     if (first) first.focus();
-    return ok ? { name: name, nickname: nick, phone: phone } : null;
+    return ok ? { name: name, nickname: nick } : null;
   }
-  ["name", "nick", "phone"].forEach(function (f) { $(f).addEventListener("input", function () { setErr(f); }); });
+  ["name", "nick"].forEach(function (f) { $(f).addEventListener("input", function () { setErr(f); }); });
 
   // two blades fly in over the form, smash together (flash, shock rings, sparks), then fade out
   function playSmash(card) {
@@ -724,12 +719,12 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
   }
 
   function showDone(d, sent) {
-    lastSummary = "Bey Showdown, 8 Nov 2026, 5-8 PM\nName: " + d.name + "\nNickname: " + d.nickname + "\nContact: " + d.phone + "\nEntry fee: " + ENTRY_FEE + " (pay on the spot)";
+    lastSummary = "Bey Showdown, 8 Nov 2026, 5-8 PM\nName: " + d.name + "\nNickname: " + d.nickname + "\nEntry fee: " + ENTRY_FEE + " (pay on the spot)";
     $("doneNick").textContent = d.nickname;
     $("doneText").textContent = lastSummary.split("\n").slice(1).join("\n");
     $("doneEyebrow").textContent = sent ? "Blader locked in" : "One more step";
     $("doneNote").textContent = sent
-      ? "Your registration was sent to the organiser. Bring " + ENTRY_FEE + " to pay on the spot. See you at the stadium."
+      ? "Your registration was sent to the organiser. Bring " + ENTRY_FEE + " to pay on the spot (the fee may be adjusted based on the number of players). See you at the stadium."
       : "Copy your details and send them to the organiser to confirm your spot.";
     $("doneTitle").textContent = sent ? "Registration successful" : "Almost there";
     var js = $("joinStatus"); js.hidden = !(sent && DUPLICATE_CHECK.csv); js.className = "join-status"; js.textContent = "Checking your spot...";
@@ -844,14 +839,14 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
   }
 
   function send(d) {
-    var gf = GOOGLE_FORM, useGoogle = !!(gf.action && gf.fields.name && gf.fields.nickname && gf.fields.phone);
+    var gf = GOOGLE_FORM, useGoogle = !!(gf.action && gf.fields.name && gf.fields.nickname);
     var btn = $("submitBtn");
     if (!useGoogle && !FORM_ENDPOINT) { btn.disabled = false; btn.textContent = "Lock me in"; showDone(d, false); return; }
     btn.textContent = "Sending...";
     var req;
     if (useGoogle) {
       var body = new URLSearchParams();
-      body.set(gf.fields.name, d.name); body.set(gf.fields.nickname, d.nickname); body.set(gf.fields.phone, d.phone);
+      body.set(gf.fields.name, d.name); body.set(gf.fields.nickname, d.nickname);
       req = fetch(gf.action, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: body.toString() });
     } else {
       req = fetch(FORM_ENDPOINT, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(d) });
@@ -891,7 +886,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
     else fallback();
   });
   $("againBtn").addEventListener("click", function () {
-    form.reset(); ["name", "nick", "phone"].forEach(function (f) { setErr(f); });
+    form.reset(); ["name", "nick"].forEach(function (f) { setErr(f); });
     done.classList.remove("show"); form.style.display = "grid"; $("name").focus({ preventScroll: true });
   });
 })();
