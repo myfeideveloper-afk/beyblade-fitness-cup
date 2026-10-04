@@ -167,6 +167,11 @@ html.locked, html.locked body { overflow: hidden; overscroll-behavior: none; }
 .slots li.on { border: 1px solid var(--line); background: rgba(217, 180, 90, .08); color: var(--text); }
 .slots li.on b { text-transform: none; letter-spacing: .02em; font-size: 17px; }
 .slots li.on span { color: var(--gold); }
+.slots li em { margin-left: auto; font: 700 11px/1 var(--f-cond); letter-spacing: .16em; text-transform: uppercase; color: #231600; background: var(--gold-grad); padding: 3px 6px; }
+.slots li.me { border-color: var(--gold); box-shadow: 0 0 18px rgba(217, 180, 90, .22); }
+.join-status { margin: 0; text-align: center; font: 600 16px/1.4 var(--f-body); color: var(--muted); }
+.join-status.ok { color: var(--green); }
+.join-status.warn { color: var(--gold-hi); }
 .fee { display: grid; gap: 6px; padding: 16px 18px; border: 1px solid var(--line); background: rgba(217, 180, 90, .07); }
 .fee p { margin: 0; }
 .fee-amt { font: 700 20px/1.2 var(--f-cond); letter-spacing: .08em; text-transform: uppercase; color: var(--text); }
@@ -411,6 +416,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
       <div class="done" id="done" aria-live="polite">
         <div class="done-msg">
         <h4 class="done-title gold" id="doneTitle">Registration successful</h4>
+        <p class="join-status" id="joinStatus" role="status" hidden></p>
         <div class="eyebrow" id="doneEyebrow">Blader locked in</div>
         <div class="stub">
           <span class="k">Blader name</span>
@@ -427,7 +433,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
 </section>
 
 <footer>
-  See you at the dish &middot; 8 Nov 2026 &middot; 5 to 8 PM
+  See you at the stadium &middot; 8 Nov 2026 &middot; 5 to 8 PM
   <small>Background: BEYBLADE X &times; Jax Jones, Ado "Stay Gold" anime MV, from the official BEYBLADE Channel. &copy; Homura Kawamoto, Hikaru Muno, Posuka Demizu, BBXProject, TV TOKYO. Fan-made invitation.</small>
 </footer>
 
@@ -673,9 +679,10 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
     $("doneText").textContent = lastSummary.split("\n").slice(1).join("\n");
     $("doneEyebrow").textContent = sent ? "Blader locked in" : "One more step";
     $("doneNote").textContent = sent
-      ? "Your registration was sent to the organiser. Bring " + ENTRY_FEE + " to pay on the spot. See you at the dish."
+      ? "Your registration was sent to the organiser. Bring " + ENTRY_FEE + " to pay on the spot. See you at the stadium."
       : "Copy your details and send them to the organiser to confirm your spot.";
     $("doneTitle").textContent = sent ? "Registration successful" : "Almost there";
+    var js = $("joinStatus"); js.hidden = !(sent && DUPLICATE_CHECK.csv); js.className = "join-status"; js.textContent = "Checking your spot...";
     var card = form.closest(".card");
     function reveal() {
       card.classList.remove("smashing"); $("smash").classList.remove("play");
@@ -700,8 +707,10 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
     }
     row.push(cell); rows.push(row); return rows;
   }
-  function savedNicks() { try { return JSON.parse(localStorage.getItem("bey-showdown-nicks") || "[]"); } catch (e) { return []; } }
-  function rememberNick(nick) { try { var l = savedNicks(); l.push(norm(nick)); localStorage.setItem("bey-showdown-nicks", JSON.stringify(l)); } catch (e) { /* storage unavailable */ } }
+  // registrations made on this device: used to catch a repeated nickname and to mark "You" in the list
+  function localJoined() { try { return JSON.parse(localStorage.getItem("bey-showdown-joined") || "[]"); } catch (e) { return []; } }
+  function savedNicks() { return localJoined().map(function (e) { return e.k; }); }
+  function rememberNick(nick) { try { var l = localJoined(); l.push({ k: norm(nick), n: nick, ts: Date.now() }); localStorage.setItem("bey-showdown-joined", JSON.stringify(l)); } catch (e) { /* storage unavailable */ } }
 
   var players = [], playersKnown = false;
   // resolves with the list of joined nicknames, or null when the list cannot be read
@@ -729,12 +738,16 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
     var n = Math.min(players.length, MAX_PLAYERS);
     $("plCount").textContent = String(n); $("plMax").textContent = String(MAX_PLAYERS);
     $("plBar").style.transform = "scaleX(" + (n / MAX_PLAYERS) + ")";
-    slotsEl.innerHTML = "";
+    slotsEl.innerHTML = ""; var mine = savedNicks();
     for (var i = 0; i < MAX_PLAYERS; i++) {
       var li = document.createElement("li"), num = document.createElement("span"), nm = document.createElement("b");
       num.textContent = String(i + 1).padStart(2, "0"); li.appendChild(num);
-      if (i < players.length) { li.className = "on"; nm.textContent = players[i]; } else { nm.textContent = "Open"; }
-      li.appendChild(nm); slotsEl.appendChild(li);
+      if (i < players.length) {
+        li.className = "on"; nm.textContent = players[i];
+        li.appendChild(nm);
+        if (mine.indexOf(norm(players[i])) >= 0) { li.className += " me"; var tag = document.createElement("em"); tag.textContent = "You"; li.appendChild(tag); }
+      } else { nm.textContent = "Open"; li.appendChild(nm); }
+      slotsEl.appendChild(li);
     }
     $("plNote").textContent = n >= MAX_PLAYERS ? "All spots are taken." : (MAX_PLAYERS - n) + " spot" + (MAX_PLAYERS - n === 1 ? "" : "s") + " left.";
     if (!done.classList.contains("show")) setFull(n >= MAX_PLAYERS);
@@ -744,6 +757,25 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
   }
   loadPlayers();
   setInterval(function () { if (!document.hidden) loadPlayers(); }, 60000);
+
+  // 3 seconds after a registration is sent, reload the list and tell the player whether they are on it (a few more tries if not yet)
+  function confirmJoin(d) {
+    var st = $("joinStatus"), k = norm(d.nickname), waits = [3000, 4000, 5000], i = 0;
+    if (!DUPLICATE_CHECK.csv) { st.hidden = true; return; }
+    function attempt() {
+      fetchNicknames().then(function (list) {
+        if (list) {
+          players = list; playersKnown = true; renderPlayers();
+          var at = list.findIndex(function (x) { return norm(x) === k; });
+          if (at >= 0) { st.className = "join-status ok"; st.textContent = "You are on the player list: spot " + (at + 1) + " of " + MAX_PLAYERS + "."; return; }
+        }
+        i++;
+        if (i < waits.length) setTimeout(attempt, waits[i]);
+        else { st.className = "join-status warn"; st.textContent = "Your registration was sent, but you are not on the list yet. Refresh this page in a minute to check."; }
+      });
+    }
+    setTimeout(attempt, waits[0]);
+  }
 
   function send(d) {
     var gf = GOOGLE_FORM, useGoogle = !!(gf.action && gf.fields.name && gf.fields.nickname && gf.fields.phone);
@@ -759,7 +791,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
       req = fetch(FORM_ENDPOINT, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(d) });
     }
     req
-      .then(function () { rememberNick(d.nickname); if (playersKnown) { players.push(d.nickname); renderPlayers(); } showDone(d, true); })
+      .then(function () { rememberNick(d.nickname); showDone(d, true); confirmJoin(d); })
       .catch(function () { showDone(d, false); })
       .finally(function () { btn.disabled = false; btn.textContent = "Lock me in"; });
   }
@@ -773,7 +805,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
       var k = norm(d.nickname);
       var taken = savedNicks().indexOf(k) >= 0 || (list || []).some(function (x) { return norm(x) === k; });
       if (list) { players = list; playersKnown = true; renderPlayers(); }
-      if (list && list.length >= MAX_PLAYERS) { btn.disabled = false; return; }
+      if (list && players.length >= MAX_PLAYERS) { btn.disabled = false; return; }
       if (taken) {
         setErr("nick", "This nickname is already taken. Pick another blader name.");
         btn.disabled = false; btn.textContent = "Lock me in"; $("nick").focus(); return;
