@@ -13,9 +13,17 @@
  *     Press Deploy and allow the permissions it asks for.
  *  4. Copy the "Web app" URL and paste it into DUPLICATE_CHECK.api in index.html.
  *
+ * About the permission screen: the script has to open your sheet to read it, so Google asks YOU (the owner) once.
+ * Because it is your own unverified script, Google shows "Google hasn't verified this app": press Advanced, then
+ * "Go to <project name> (unsafe)", then Allow. Your visitors are never asked for anything.
+ * To limit it to read-only access: in Apps Script open Project Settings, tick "Show appsscript.json manifest file in editor",
+ * open appsscript.json and add this line before the last closing brace (mind the comma on the line above):
+ *   "oauthScopes": ["https://www.googleapis.com/auth/spreadsheets.readonly"]
+ *
  * It only returns nicknames (no names, no other columns). If you change this file later,
  * use Deploy > Manage deployments > Edit > New version.
  */
+/** @OnlyCurrentDoc */
 const TAB_GID = 1631540710;      // the tab that has the "nickname" column (the number after gid= in the sheet address)
 
 function doGet() {
