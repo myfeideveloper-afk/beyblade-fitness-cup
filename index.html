@@ -206,10 +206,16 @@ html.locked, html.locked body { overflow: hidden; overscroll-behavior: none; }
 .pnote { margin: 0; color: var(--muted); }
 .prize.box { grid-column: 1 / -1; grid-template-columns: minmax(0, 260px) minmax(0, 1fr); align-items: center; gap: 24px; padding: 24px; }
 .prize.box .pic { aspect-ratio: 1; }
-.prize.box .pic img { animation: none; filter: drop-shadow(0 10px 18px rgba(0, 0, 0, .5)); border-radius: 4px; }
+.prize.box .pic { aspect-ratio: auto; }
+.prize.box .pic img { height: auto; animation: none; filter: drop-shadow(0 14px 18px rgba(0, 0, 0, .55)); }
 .prize.mini { grid-column: 1 / -1; grid-template-columns: minmax(0, 1fr) minmax(0, 420px); align-items: center; gap: 24px; border-color: var(--gold); box-shadow: 0 0 40px rgba(217, 180, 90, .14); }
-.sticker { margin: 0; min-width: 0; }
-.sticker img { display: block; width: 100%; height: auto; border-radius: 4px; background: #fff; }
+.stickers { position: relative; display: grid; gap: 12px; min-width: 0; padding: 18px 0 8px; }
+.stickers::before { content: ""; position: absolute; inset: -4% -6%; background: radial-gradient(ellipse at center, rgba(255, 190, 90, .22), rgba(217, 180, 90, 0) 65%); pointer-events: none; }
+.st { position: relative; display: block; width: 100%; height: auto; filter: drop-shadow(0 14px 14px rgba(0, 0, 0, .55)) drop-shadow(0 0 1px rgba(255, 255, 255, .5)); will-change: transform; }
+.st.s1 { animation: floatA 6s ease-in-out infinite; transform: rotate(-3deg); width: 96%; justify-self: center; }
+@keyframes floatA { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-10px) rotate(-2deg); } }
+.credit { position: relative; margin: 4px 0 0; font-size: 11px; color: var(--muted); text-align: center; }
+@media (prefers-reduced-motion: reduce) { .st { animation: none !important; } }
 @media (max-width: 760px) { .prize.mini { grid-template-columns: 1fr; } }
 .prize.mini .rank { font-size: clamp(22px, 4vw, 32px); }
 .prize.mini b { color: var(--gold-hi); font-weight: 600; }
@@ -509,7 +515,7 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
         </div>
       </article>
       <article class="prize box">
-        <div class="pic"><img src="assets/prize-ux10.jpg" alt="UX-10 Customize Set U box with 4 blades, 3 ratchets and 6 bits" width="700" height="700" loading="lazy"></div>
+        <div class="pic"><img src="assets/prize-ux10.png" alt="UX-10 Customize Set U box with 4 blades, 3 ratchets and 6 bits" width="643" height="478" loading="lazy"></div>
         <div class="pbody">
           <p class="rank gold">2nd&ndash;8th</p>
           <h3>One UX-10 Customize Set U, shared as parts</h3>
@@ -530,11 +536,12 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
         <div class="pbody">
           <p class="rank gold">Mini game</p>
           <h3>Highest RPM</h3>
-          <p class="pnote">Every player launches <b>2 times</b>. Your highest RPM of the two counts. The player with the highest RPM wins a <b>UX-10 QR code</b> and a <b>Beyblade Bar Halloween Edition battle pass sticker</b>.</p>
+          <p class="pnote">Every player launches <b>2 times</b>. Your highest RPM of the two counts. The player with the highest RPM wins a <b>UX-10 QR code</b> and the <b>Beyblade Bar Halloween Edition battle pass sticker</b>.</p>
         </div>
-        <figure class="sticker">
-          <img src="assets/prize-sticker.jpg" alt="Beyblade Bar official Halloween Edition battle pass stickers" width="721" height="557" loading="lazy">
-        </figure>
+        <div class="stickers">
+          <img class="st s1" src="assets/sticker.png" alt="Beyblade Bar Halloween Edition battle pass sticker" width="1256" height="292" loading="lazy">
+          <p class="credit">&copy; Homura Kawamoto, Hikaru Muno, Posuka Demizu, BBXProject &copy; TOMY</p>
+        </div>
       </article>
     </div>
   </div>
