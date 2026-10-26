@@ -207,7 +207,10 @@ html.locked, html.locked body { overflow: hidden; overscroll-behavior: none; }
 .prize.box { grid-column: 1 / -1; grid-template-columns: minmax(0, 260px) minmax(0, 1fr); align-items: center; gap: 24px; padding: 24px; }
 .prize.box .pic { aspect-ratio: 1; }
 .prize.box .pic img { animation: none; filter: drop-shadow(0 10px 18px rgba(0, 0, 0, .5)); border-radius: 4px; }
-.prize.mini { grid-column: 1 / -1; border-color: var(--gold); box-shadow: 0 0 40px rgba(217, 180, 90, .14); }
+.prize.mini { grid-column: 1 / -1; grid-template-columns: minmax(0, 1fr) minmax(0, 420px); align-items: center; gap: 24px; border-color: var(--gold); box-shadow: 0 0 40px rgba(217, 180, 90, .14); }
+.sticker { margin: 0; min-width: 0; }
+.sticker img { display: block; width: 100%; height: auto; border-radius: 4px; background: #fff; }
+@media (max-width: 760px) { .prize.mini { grid-template-columns: 1fr; } }
 .prize.mini .rank { font-size: clamp(22px, 4vw, 32px); }
 .prize.mini b { color: var(--gold-hi); font-weight: 600; }
 .picks { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; width: 100%; }
@@ -527,8 +530,11 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
         <div class="pbody">
           <p class="rank gold">Mini game</p>
           <h3>Highest RPM</h3>
-          <p class="pnote">The player with the highest RPM wins a <b>UX-10 QR code</b>.</p>
+          <p class="pnote">Every player launches <b>2 times</b>. Your highest RPM of the two counts. The player with the highest RPM wins a <b>UX-10 QR code</b> and a <b>Beyblade Bar Halloween Edition battle pass sticker</b>.</p>
         </div>
+        <figure class="sticker">
+          <img src="assets/prize-sticker.jpg" alt="Beyblade Bar official Halloween Edition battle pass stickers" width="721" height="557" loading="lazy">
+        </figure>
       </article>
     </div>
   </div>
