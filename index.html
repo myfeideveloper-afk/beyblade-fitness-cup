@@ -204,6 +204,22 @@ html.locked, html.locked body { overflow: hidden; overscroll-behavior: none; }
 .rank { margin: 0; font: 800 clamp(30px, 5vw, 46px)/1 var(--f-serif); text-transform: uppercase; }
 .prize h3 { margin: 0; font: 700 clamp(19px, 3vw, 26px)/1.15 var(--f-cond); letter-spacing: .06em; text-transform: uppercase; overflow-wrap: anywhere; }
 .pnote { margin: 0; color: var(--muted); }
+.tuners { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.tuner { margin: 0; position: relative; display: grid; gap: 10px; justify-items: center; align-content: end; min-width: 0; padding: 18px 10px 14px; border: 1px solid var(--line); background: var(--panel); overflow: hidden; }
+.tuner::before { content: ""; position: absolute; left: 50%; top: 42%; width: 78%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; background: radial-gradient(circle, var(--glow, rgba(255, 220, 140, .5)) 0%, transparent 68%); filter: blur(6px); pointer-events: none; }
+.tuner img { position: relative; width: auto; max-width: 100%; height: clamp(150px, 24vw, 230px); object-fit: contain; filter: drop-shadow(0 0 14px var(--glow, rgba(255, 220, 140, .6))) drop-shadow(0 12px 14px rgba(0, 0, 0, .55)); animation: tfloat 6s ease-in-out infinite; }
+.tuner figcaption { position: relative; display: grid; gap: 4px; justify-items: center; text-align: center; font: 700 clamp(13px, 2.4vw, 16px)/1.1 var(--f-cond); letter-spacing: .18em; text-transform: uppercase; color: var(--text); }
+.tuner figcaption b { font: 800 clamp(22px, 4.4vw, 32px)/1 var(--f-serif); letter-spacing: .02em; }
+.gold-t { --glow: rgba(255, 196, 70, .65); border-color: var(--gold); }
+.gold-t figcaption b { color: var(--gold-hi); }
+.silver-t { --glow: rgba(200, 220, 255, .55); }
+.silver-t figcaption b { color: #dfe8f6; }
+.white-t { --glow: rgba(255, 255, 255, .55); }
+.white-t figcaption b { color: #fff; }
+.silver-t img { animation-delay: -2s; } .white-t img { animation-delay: -4s; }
+@keyframes tfloat { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-8px) rotate(2deg); } }
+@media (max-width: 560px) { .tuners { gap: 8px; } .tuner { padding: 14px 4px 10px; } .tuner figcaption { letter-spacing: .08em; } }
+@media (prefers-reduced-motion: reduce) { .tuner img { animation: none !important; } }
 .prize.box { grid-column: 1 / -1; grid-template-columns: minmax(0, 260px) minmax(0, 1fr); align-items: center; gap: 24px; padding: 24px; }
 .prize.box .pic { aspect-ratio: 1; }
 .prize.box .pic { aspect-ratio: auto; }
@@ -507,11 +523,17 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
     <h2 id="prTitle" class="gold">Prizes</h2>
     <p class="lede prnote">The prize list is confirmed based on the number of players.</p>
     <div class="prize-grid">
+      <div class="tuners" aria-label="Tuner prizes for the top three places">
+        <figure class="tuner gold-t"><img src="assets/tuner-gold.png" alt="Golden tuner" width="347" height="604" loading="lazy"><figcaption><b>1st</b>Golden tuner</figcaption></figure>
+        <figure class="tuner silver-t"><img src="assets/tuner-silver.png" alt="Silver tuner" width="584" height="511" loading="lazy"><figcaption><b>2nd</b>Silver tuner</figcaption></figure>
+        <figure class="tuner white-t"><img src="assets/tuner-white.png" alt="White tuner" width="583" height="509" loading="lazy"><figcaption><b>3rd</b>White tuner</figcaption></figure>
+      </div>
       <article class="prize first">
         <div class="pic"><img src="assets/bey-red.png" alt="UX-00 Aero Pegasus 3-70A Red Ver." width="640" height="640" loading="lazy"></div>
         <div class="pbody">
           <p class="rank gold">1st</p>
           <h3>UX-00 Aero Pegasus 3-70A Red Ver.</h3>
+          <p class="pnote">Plus the <b>golden tuner</b>.</p>
         </div>
       </article>
       <article class="prize box">
@@ -521,8 +543,8 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
           <h3>One UX-10 Customize Set U, shared as parts</h3>
           <p class="pnote">The box holds 4 blades, 3 ratchets and 6 bits. 2nd to 7th pick from what is left, in order of rank. 8th place gets the last item left in the box.</p>
           <ol class="picks">
-            <li><b>2nd</b><span>1 blade, 1 bit and 1 ratchet</span></li>
-            <li><b>3rd</b><span>1 blade, 1 bit and 1 ratchet from the remaining</span></li>
+            <li><b>2nd</b><span>1 blade, 1 bit and 1 ratchet, plus the silver tuner</span></li>
+            <li><b>3rd</b><span>1 blade, 1 bit and 1 ratchet from the remaining, plus the white tuner</span></li>
             <li><b>4th</b><span>Any 2 items from the remaining</span></li>
             <li><b>5th</b><span>Any 2 items from the remaining</span></li>
             <li><b>6th</b><span>1 item from the remaining</span></li>
