@@ -168,6 +168,16 @@ html.locked, html.locked body { overflow: hidden; overscroll-behavior: none; }
 .t-venue { display: grid; gap: 6px; margin-top: 18px; }
 .t-venue .cin { color: var(--muted); font-size: 14px; }
 .t-venue b { font: 700 clamp(18px, 3.2vw, 24px)/1.15 var(--f-cond); letter-spacing: .06em; text-transform: uppercase; color: var(--gold-hi); }
+.rulesec { padding-inline: 16px; padding-block: 8px clamp(36px, 7vh, 80px); background: rgba(5, 7, 15, .86); }
+.rulesec h2 { margin: 12px 0 22px; font: 800 clamp(30px, 6vw, 52px)/1 var(--f-serif); text-transform: uppercase; letter-spacing: .03em; }
+.rule-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.rule-card { min-width: 0; padding: 22px; border: 1px solid var(--line); background: var(--panel); }
+.rule-card.custom { border-color: var(--gold); box-shadow: 0 0 40px rgba(217, 180, 90, .14); }
+.rule-card h3 { margin: 0 0 14px; font: 700 clamp(20px, 3.4vw, 26px)/1.1 var(--f-cond); letter-spacing: .1em; text-transform: uppercase; color: var(--gold-hi); }
+.rule-card ol { margin: 0; padding-left: 1.3em; display: grid; gap: 10px; }
+.rule-card li::marker { color: var(--gold); font-weight: 700; }
+.rule-card b { color: var(--text); font-weight: 600; }
+@media (max-width: 700px) { .rule-grid { grid-template-columns: 1fr; } }
 .location { padding-inline: 16px; padding-block: 8px clamp(36px, 7vh, 80px); background: rgba(5, 7, 15, .86); }
 .loc-grid { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: clamp(20px, 5vw, 48px); align-items: center; }
 .loc-pic { position: relative; margin: 0; border: 1px solid var(--gold); box-shadow: 0 0 50px rgba(217, 180, 90, .18); overflow: hidden; }
@@ -194,6 +204,17 @@ html.locked, html.locked body { overflow: hidden; overscroll-behavior: none; }
 .rank { margin: 0; font: 800 clamp(30px, 5vw, 46px)/1 var(--f-serif); text-transform: uppercase; }
 .prize h3 { margin: 0; font: 700 clamp(19px, 3vw, 26px)/1.15 var(--f-cond); letter-spacing: .06em; text-transform: uppercase; overflow-wrap: anywhere; }
 .pnote { margin: 0; color: var(--muted); }
+.prize.box { grid-column: 1 / -1; grid-template-columns: minmax(0, 260px) minmax(0, 1fr); align-items: center; gap: 24px; padding: 24px; }
+.prize.box .pic { aspect-ratio: 1; }
+.prize.box .pic img { animation: none; filter: drop-shadow(0 10px 18px rgba(0, 0, 0, .5)); border-radius: 4px; }
+.prize.mini { grid-column: 1 / -1; border-color: var(--gold); box-shadow: 0 0 40px rgba(217, 180, 90, .14); }
+.prize.mini .rank { font-size: clamp(22px, 4vw, 32px); }
+.prize.mini b { color: var(--gold-hi); font-weight: 600; }
+.picks { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; width: 100%; }
+.picks li { display: grid; grid-template-columns: 3.2em minmax(0, 1fr); gap: 10px; align-items: baseline; padding: 8px 0; border-top: 1px solid var(--line); }
+.picks b { font: 800 18px/1 var(--f-serif); color: var(--gold-hi); }
+.picks span { color: var(--text); }
+@media (max-width: 760px) { .prize.box { grid-template-columns: 1fr; } .prize.box .pic { max-width: 280px; justify-self: center; width: 100%; } }
 .nw { white-space: nowrap; }
 .rank { white-space: nowrap; }
 .tbc { margin-top: 4px; padding: 3px 8px; border: 1px solid var(--line); font: 700 12px/1 var(--f-cond); letter-spacing: .2em; color: var(--gold-hi); }
@@ -429,6 +450,31 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
   </div>
 </section>
 
+<!-- ======== RULES ======== -->
+<section class="rulesec" id="rules" aria-labelledby="ruTitle">
+  <div class="wrap">
+    <div class="eyebrow">Before you bring your deck</div>
+    <h2 id="ruTitle" class="gold">Rules</h2>
+    <div class="rule-grid">
+      <article class="rule-card">
+        <h3>Official rules</h3>
+        <ol>
+          <li>Follow the <b>B4 rules</b>.</li>
+          <li>Only <b>Takara Tomy</b> parts are allowed.</li>
+          <li>Banned part: <b>Metal Needle</b>.</li>
+        </ol>
+      </article>
+      <article class="rule-card custom">
+        <h3>Custom game rules</h3>
+        <ol>
+          <li><b>No Shark Scale and Wizard Rod</b> beyblades.</li>
+          <li>Your deck must include <b>at least 1 horse or horse-theme</b> beyblade.</li>
+        </ol>
+      </article>
+    </div>
+  </div>
+</section>
+
 <!-- ======== LOCATION ======== -->
 <section class="location" id="location" aria-labelledby="locTitle">
   <div class="wrap loc-grid">
@@ -459,17 +505,30 @@ footer small { display: block; margin-top: 8px; letter-spacing: .1em; text-trans
           <h3>UX-00 Aero Pegasus 3-70A Red Ver.</h3>
         </div>
       </article>
-      <article class="prize">
-        <div class="pic ph" role="img" aria-label="Photo coming soon"><span>?</span></div>
-        <div class="pbody"><p class="rank gold">2nd</p><h3>Prize to be confirmed</h3><span class="tbc">TBC</span></div>
+      <article class="prize box">
+        <div class="pic"><img src="assets/prize-ux10.jpg" alt="UX-10 Customize Set U box with 4 blades, 3 ratchets and 6 bits" width="700" height="700" loading="lazy"></div>
+        <div class="pbody">
+          <p class="rank gold">2nd&ndash;8th</p>
+          <h3>One UX-10 Customize Set U, shared as parts</h3>
+          <p class="pnote">The box holds 4 blades, 3 ratchets and 6 bits. 2nd to 7th pick from what is left, in order of rank. 8th place gets the last item left in the box.</p>
+          <ol class="picks">
+            <li><b>2nd</b><span>1 blade, 1 bit and 1 ratchet</span></li>
+            <li><b>3rd</b><span>1 blade, 1 bit and 1 ratchet from the remaining</span></li>
+            <li><b>4th</b><span>Any 2 items from the remaining</span></li>
+            <li><b>5th</b><span>Any 2 items from the remaining</span></li>
+            <li><b>6th</b><span>1 item from the remaining</span></li>
+            <li><b>7th</b><span>1 item from the remaining</span></li>
+            <li><b>8th</b><span>The last remaining item (no choice)</span></li>
+            
+          </ol>
+        </div>
       </article>
-      <article class="prize">
-        <div class="pic ph" role="img" aria-label="Photo coming soon"><span>?</span></div>
-        <div class="pbody"><p class="rank gold">3rd</p><h3>Prize to be confirmed</h3><span class="tbc">TBC</span></div>
-      </article>
-      <article class="prize">
-        <div class="pic ph" role="img" aria-label="Photo coming soon"><span>?</span></div>
-        <div class="pbody"><p class="rank gold">4th&ndash;8th</p><h3>Prize to be confirmed</h3><span class="tbc">TBC</span></div>
+      <article class="prize mini">
+        <div class="pbody">
+          <p class="rank gold">Mini game</p>
+          <h3>Highest RPM</h3>
+          <p class="pnote">The player with the highest RPM wins a <b>UX-10 QR code</b>.</p>
+        </div>
       </article>
     </div>
   </div>
